@@ -1,0 +1,32 @@
+# MonoGame .gitignore
+
+# Build results
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docview
+
+# Rider
+.idea/
+
+# VS Code
+.vscode/
+
+# NuGet
+*.nupkg
+packages/
+project.lock.json
+project.assets.json
+
+# MonoGame Content
+Content/bin/
+Content/obj/
+
+# OS
+.DS_Store
+Thumbs.db
