@@ -36,8 +36,9 @@ public class SceneManager
     public void LoadScene(EScene scene)
     {
         if (!scenes.TryGetValue(scene, out IScene sceneObject)) return;
+        currentScene?.UnloadContent();
         currentScene = sceneObject;
-        currentScene.LoadContent(content, graphicsDevice, this);
+        currentScene?.LoadContent(content, graphicsDevice, this);
     }
 
     public void Update(GameTime gameTime)

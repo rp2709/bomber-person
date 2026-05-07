@@ -55,10 +55,16 @@ public class HostGameScene : IScene
         btnBack   = new Button("Retour", new Rectangle(fieldX, btnY, btnW, btnH), fontUI);
 
         btnCreate.OnClick += OnCreateClicked;
-        btnBack.OnClick   += () => SceneManager.LoadScene(EScene.MainMenu);
+        btnBack.OnClick   += OnBackClicked;
 
         fieldGameName.SetValue("TestGame");
         fieldPort.SetValue("7777");
+    }
+
+    public void UnloadContent()
+    {
+        btnCreate.OnClick -= OnCreateClicked;
+        btnBack.OnClick   -= OnBackClicked;
     }
 
     public void Update(GameTime gameTime)
@@ -95,6 +101,11 @@ public class HostGameScene : IScene
         }
     }
 
+    private void OnBackClicked()
+    {
+        SceneManager.LoadScene(EScene.MainMenu);
+    }
+
     private async void OnCreateClicked()
     {
         if (string.IsNullOrWhiteSpace(fieldGameName.Value))
@@ -111,7 +122,7 @@ public class HostGameScene : IScene
 
         errorMessage = "Démarrage du serveur...";
         /*
-        NetworkManager.Instance.StartServer(port, _fieldPassword.Value);
+        NetworkManager.Instance.StartServer(port, fieldPassword.Value);
         bool connected = await NetworkManager.Instance.ConnectAsync("127.0.0.1", port, "Host", fieldPassword.Value);
         if (!connected)
         {

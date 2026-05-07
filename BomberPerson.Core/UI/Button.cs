@@ -38,11 +38,8 @@ public class Button
     public void Update(GameTime gameTime)
     {
         MouseStateExtended mouse = MouseExtended.GetState();
-        
-        //MouseState mouse = Mouse.GetState();
         Point mousePos = new Point(mouse.X, mouse.Y);
         bool isHover = bounds.Contains(mousePos);
-        //bool isDown = mouse.LeftButton == ButtonState.Pressed;
         bool isDown = mouse.WasButtonPressed(MouseButton.Left);
         if (isHover && isDown)
         {

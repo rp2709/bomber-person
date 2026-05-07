@@ -12,6 +12,11 @@ public class JoinGameScene : IScene
         throw new System.NotImplementedException();
     }
 
+    public void UnloadContent()
+    {
+        throw new System.NotImplementedException();
+    }
+
     public void Update(GameTime gameTime)
     {
         throw new System.NotImplementedException();
