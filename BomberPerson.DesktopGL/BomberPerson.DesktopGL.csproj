@@ -5,7 +5,6 @@
         <PublishReadyToRun>false</PublishReadyToRun>
         <TieredCompilation>false</TieredCompilation>
         <ApplicationManifest>app.manifest</ApplicationManifest>
-        <ApplicationIcon>../BomberPerson.Core/Content/Icon.ico</ApplicationIcon>
         <AssemblyName>BomberPerson</AssemblyName>
     </PropertyGroup>
     <ItemGroup>
