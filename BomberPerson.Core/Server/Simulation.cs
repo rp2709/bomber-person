@@ -1,0 +1,9 @@
+namespace BomberPerson.Core.Server;
+
+public class Simulation(State.State state)
+{
+    public State.State ProcessMessage(Message message)
+    {
+        throw  new System.NotImplementedException();
+    }
+}
