@@ -47,12 +47,13 @@ public class MainMenuScene : IScene
         btnJoin = new Button("Join Game", new Rectangle(btnX, centerY + btnHeight + spacing, btnWidth, btnHeight), fontButton);
         
         btnHost.OnClick += OnHostClicked;
-        //btnJoin.OnClick += () => SceneManager.LoadScene(new JoinGameScene());
+        btnJoin.OnClick += OnJoinClicked;
     }
 
     public void UnloadContent()
     {
         btnHost.OnClick -= OnHostClicked;
+        btnJoin.OnClick -= OnJoinClicked;
     }
 
     public void Update(GameTime gameTime)
@@ -76,4 +77,5 @@ public class MainMenuScene : IScene
     }
 
     private void OnHostClicked() => SceneManager.LoadScene(EScene.HostMenu);
+    private void OnJoinClicked() => SceneManager.LoadScene(EScene.JoinMenu);
 }

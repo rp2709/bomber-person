@@ -23,6 +23,7 @@ public class SceneManager
     {
         { EScene.MainMenu, new MainMenuScene() },
         { EScene.HostMenu, new HostGameScene() },
+        { EScene.JoinMenu, new JoinGameScene() },
         { EScene.LobbyMenu, new LobbyScene() },
     };
     
