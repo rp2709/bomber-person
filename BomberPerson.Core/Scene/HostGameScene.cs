@@ -1,4 +1,5 @@
 ﻿
+using BomberPerson.Core.Lobby;
 using BomberPerson.Core.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
@@ -65,6 +66,7 @@ public class HostGameScene : IScene
     {
         btnCreate.OnClick -= OnCreateClicked;
         btnBack.OnClick   -= OnBackClicked;
+        errorMessage = string.Empty;
     }
 
     public void Update(GameTime gameTime)
@@ -130,7 +132,8 @@ public class HostGameScene : IScene
             NetworkManager.Instance.Disconnect();
             return;
         }
-        SceneManager.NavigateTo(new LobbyScene(fieldGameName.Value));
         */
+        LobbyScene scene = (LobbyScene)SceneManager.LoadScene(EScene.LobbyMenu);
+        LobbyManager.Instance.SetLobby(scene, fieldGameName.Value);
     }
 }
