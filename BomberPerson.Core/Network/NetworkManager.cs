@@ -1,6 +1,9 @@
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using BomberPerson.Core.Lobby;
 using BomberPerson.Core.Messages;
+using BomberPerson.Core.State.NetworkMessages;
 using GameServer = BomberPerson.Core.Server.Server;
 
 namespace BomberPerson.Core.Network;
@@ -10,6 +13,7 @@ namespace BomberPerson.Core.Network;
 /// <see cref="GameServer"/> (running on a background task) and a local <see cref="Client"/>
 /// connected to it over loopback: the host plays as an ordinary client that happens to talk
 /// to a server living in its own process. Remote players only use the client side.
+/// It also translates incoming server snapshots into the shared <see cref="LobbyManager"/>.
 /// </summary>
 public class NetworkManager
 {
@@ -36,17 +40,54 @@ public class NetworkManager
     public async Task<bool> ConnectAsync(string host, int port, string playerName, string password)
     {
         client = new Client();
-        return await client.ConnectAsync(host, port);
+        client.MessageReceived += OnServerMessage;
+
+        bool connected = await client.ConnectAsync(host, port);
+        if (!connected)
+        {
+            client.MessageReceived -= OnServerMessage;
+            client = null;
+        }
+        return connected;
     }
 
     public void Send(IMessage message) => client?.Send(message);
 
     public void Disconnect()
     {
-        client?.Disconnect();
-        client = null;
+        if (client != null)
+        {
+            client.MessageReceived -= OnServerMessage;
+            client.Disconnect();
+            client = null;
+        }
         serverCts?.Cancel();
         serverCts = null;
         server = null;
+    }
+
+    private void OnServerMessage(IMessage message)
+    {
+        switch (message)
+        {
+            case NewStateMessage snapshot:
+                LobbyManager.Instance.SetState(ToLobbyPlayers(snapshot.State));
+                break;
+            case LobbyFull:
+                LobbyManager.Instance.OnError("La partie est pleine.");
+                Disconnect();
+                break;
+        }
+    }
+
+    private static List<NetworkPlayer> ToLobbyPlayers(State.State state)
+    {
+        List<NetworkPlayer> players = new();
+        foreach (State.Player p in state.Players)
+        {
+            string name = p.Number == 0 ? "Host" : $"Joueur {p.Number + 1}";
+            players.Add(new NetworkPlayer(p.Number, name, p.Number == 0, p.Ready));
+        }
+        return players;
     }
 }

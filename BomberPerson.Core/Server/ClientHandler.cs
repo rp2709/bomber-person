@@ -1,3 +1,4 @@
+using System;
 using System.Net.Sockets;
 using System.Threading.Tasks.Dataflow;
 using BomberPerson.Core.Messages;
@@ -5,23 +6,57 @@ using BomberPerson.Core.State.NetworkMessages;
 
 namespace BomberPerson.Core.Server;
 
-public class ClientHandler(TcpClient client,BufferBlock<IMessage> messageBuffer)
+/// <summary>
+/// Bridges one TCP client to the server pipeline.
+/// Inbound: reads framed wire messages, tags them with this connection's slot, and posts them
+/// into the shared buffer. Outbound: an ActionBlock (single writer) subscribed to the broadcast
+/// writes every state snapshot back to this client.
+/// </summary>
+public class ClientHandler(
+    TcpClient client,
+    int slot,
+    BufferBlock<IMessage> messageBuffer,
+    ISourceBlock<IMessage> broadcast,
+    Action onExit)
 {
     public void Handle()
     {
-        messageBuffer.Post(new NewPlayerMessage());
-        while (client.Connected)
-        {
-            var message = NetworkMessageFactory.FromStream(client.GetStream());
-            if (message is null) break; // FromStream is still a stub; avoid a hot null loop
-            if (message is LeaveGameMessage)
+        NetworkStream stream = client.GetStream();
+
+        ActionBlock<IMessage> outbound = new(
+            message =>
             {
-                client.Close();
-                break;
+                if (message is NetworkMessage networkMessage)
+                {
+                    try { stream.Write(networkMessage.Serialize()); }
+                    catch { /* socket gone; the read loop will tear things down */ }
+                }
+            },
+            new ExecutionDataflowBlockOptions { MaxDegreeOfParallelism = 1 });
+
+        // Subscribe before announcing the join, so the resulting snapshot reaches this client.
+        using IDisposable link = broadcast.LinkTo(outbound);
+
+        messageBuffer.Post(new NewPlayerMessage(slot));
+
+        try
+        {
+            while (client.Connected)
+            {
+                IMessage message = NetworkMessageFactory.FromStream(stream);
+                if (message is null) break;                 // peer disconnected
+                if (message is LeaveGameMessage) break;
+                if (message is SetReadyMessage ready)
+                    messageBuffer.Post(new PlayerReadyMessage(slot, ready.Ready));
             }
-            messageBuffer.Post(message);
         }
-        
-        // send client disconnected message
+        catch { /* socket reset or malformed frame */ }
+        finally
+        {
+            messageBuffer.Post(new PlayerLeftMessage(slot));
+            outbound.Complete();
+            client.Close();
+            onExit();
+        }
     }
 }

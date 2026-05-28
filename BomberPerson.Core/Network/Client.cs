@@ -22,6 +22,9 @@ public class Client : IDisposable
 
     public bool IsConnected => Volatile.Read(ref disconnected) == 0 && tcp != null && tcp.Connected;
 
+    /// <summary>Raised on a background thread for every message received from the server.</summary>
+    public event Action<IMessage> MessageReceived;
+
     /// <summary>
     /// Connects with a few retries so the host's own client can wait for its server's listener
     /// to come up, and slow remote joins succeed too. Returns false if the connection fails.
@@ -60,15 +63,30 @@ public class Client : IDisposable
             },
             new ExecutionDataflowBlockOptions { MaxDegreeOfParallelism = 1, CancellationToken = token });
 
-        // Inbound: a receive loop will parse frames and update the lobby/game state. It is
-        // intentionally not started yet because NetworkMessageFactory.FromStream is still a
-        // stub (returns null); starting it now would spin. It lands with the message layer.
+        // Inbound: parse messages off the socket and raise them. FromStream blocks until a full
+        // message arrives (or the peer disconnects), so this loop does not spin.
+        _ = Task.Run(() => ReceiveLoop(stream, token));
 
         return true;
     }
 
     /// <summary>Queues a message to be sent to the server. Safe to call from the game thread.</summary>
     public void Send(IMessage message) => outbound?.Post(message);
+
+    private void ReceiveLoop(NetworkStream stream, CancellationToken token)
+    {
+        try
+        {
+            while (!token.IsCancellationRequested && tcp != null && tcp.Connected)
+            {
+                IMessage message = NetworkMessageFactory.FromStream(stream);
+                if (message is null) break;            // server closed the connection
+                MessageReceived?.Invoke(message);
+            }
+        }
+        catch { /* socket reset or malformed frame -> treat as disconnect */ }
+        finally { Disconnect(); }
+    }
 
     public void Disconnect()
     {

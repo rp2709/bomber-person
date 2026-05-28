@@ -1,5 +1,4 @@
 ﻿
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using BomberPerson.Core.Lobby;
 using BomberPerson.Core.Network;
@@ -96,7 +95,7 @@ public class HostGameScene : IScene
             {
                 LobbyScene scene = (LobbyScene)SceneManager.LoadScene(EScene.LobbyMenu);
                 LobbyManager.Instance.SetLobby(scene, fieldGameName.Value);
-                LobbyManager.Instance.SetState(new List<NetworkPlayer> { new NetworkPlayer(0, "Host", true, false) });
+                // Players are filled by the server's snapshots, received over the host's own client.
             }
             else
             {

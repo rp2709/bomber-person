@@ -13,6 +13,7 @@ public class Player(int number, Color color)
     public Vector2 Velocity { get; set; }= Vector2.Zero;
     public bool Ready { get; private set; } = false;
     public void FlipReady(){Ready = !Ready;}
+    public void SetReady(bool ready){Ready = ready;}
 
     public void NextColor()
     {

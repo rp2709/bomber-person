@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using BomberPerson.Core.Lobby;
+using BomberPerson.Core.Network;
+using BomberPerson.Core.State.NetworkMessages;
 using BomberPerson.Core.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
@@ -251,9 +253,8 @@ public class LobbyScene : IScene
         localReady = !localReady;
         btnReady.SetLabel(localReady ? "Pas prêt" : "Prêt");
 
-        // Placeholder local tant que l'aller-retour serveur n'est pas branché.
-        LobbyManager.Instance.SetLocalReady(localReady);
-        //NetworkManager.Instance.SendToServer( localReady ? new PlayerReadyRequestTask() : new PlayerNotReadyRequestTask() );
+        // On envoie l'intention au serveur ; la pastille se met à jour au retour du NewState.
+        NetworkManager.Instance.Send(new SetReadyMessage(localReady));
     }
 
     private void OnStartClicked()
