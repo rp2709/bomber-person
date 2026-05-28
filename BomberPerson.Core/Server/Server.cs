@@ -18,11 +18,11 @@ public class Server(int port, long address)
     {
         // construct server dataflow pipeline
         var messageBuffer = new BufferBlock<IMessage>();
-        var simulationBlock = new TransformBlock<IMessage,State.State>(new Simulation(new State.State()).ProcessMessage);
-        var broadcastBlock = new BroadcastBlock<State.State>((state1 => state1));
+        var simulationBlock = new TransformManyBlock<IMessage,IMessage>(new Simulation(new State.State()).ProcessMessage);
+        var broadcastBlock = new BroadcastBlock<IMessage>((state1 => state1));
         
         messageBuffer.LinkTo(simulationBlock, new DataflowLinkOptions());
-        simulationBlock.LinkTo(broadcastBlock, new DataflowLinkOptions{ PropagateCompletion =  true});
+        simulationBlock.LinkTo(broadcastBlock, new DataflowLinkOptions{ PropagateCompletion =  true},message => message is NetworkMessage);
         
         using TcpListener listener = new TcpListener(new IPEndPoint(new IPAddress(address), port));
         listener.Start();
