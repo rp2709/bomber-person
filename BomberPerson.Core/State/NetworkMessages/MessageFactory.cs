@@ -20,6 +20,7 @@ public static class NetworkMessageFactory
             MessageType.Move => new MoveMessage((MoveMessage.MoveDirection)stream.ReadByte()),
             MessageType.Stop => new StopMessage(),
             MessageType.PutBomb => new PutBombMessage(new BinaryReader(stream).ReadUInt32(), new BinaryReader(stream).ReadUInt32()),
+            MessageType.SetReady => new SetReadyMessage(stream.ReadByte() == 1),
             _ => throw new InvalidDataException($"Unknown message type: {typeByte}")
         };
     }

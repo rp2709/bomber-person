@@ -8,4 +8,5 @@ public enum MessageType : byte
     Move,
     Stop,
     PutBomb,
+    SetReady,
 }

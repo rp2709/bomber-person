@@ -1,5 +1,6 @@
-using System.Drawing;
 using BomberPerson.Core.State;
+using System.Collections.Concurrent;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -13,40 +14,45 @@ namespace BomberPerson.Core.Server;
 public class Server(int port, long address)
 {
     CancellationTokenSource cts;
-    private int playerCount = 0;
+
     public void Run()
     {
         // construct server dataflow pipeline
         var messageBuffer = new BufferBlock<IMessage>();
         var simulationBlock = new TransformManyBlock<IMessage,IMessage>(new Simulation(new State.State()).ProcessMessage);
-        var broadcastBlock = new BroadcastBlock<IMessage>((state1 => state1));
-        
-        messageBuffer.LinkTo(simulationBlock, new DataflowLinkOptions());
+        var broadcastBlock = new BroadcastBlock<IMessage>(message => message);
+
+        messageBuffer.LinkTo(simulationBlock, new DataflowLinkOptions{ PropagateCompletion = true });
         simulationBlock.LinkTo(broadcastBlock, new DataflowLinkOptions{ PropagateCompletion =  true},message => message is NetworkMessage);
-        
+
+        // Player slots 0..MaxPlayers-1; a slot returns to the pool when its player leaves.
+        var freeSlots = new ConcurrentQueue<int>(Enumerable.Range(0, State.State.MaxPlayers));
+
         using TcpListener listener = new TcpListener(new IPEndPoint(new IPAddress(address), port));
         listener.Start();
         while (!cts.IsCancellationRequested)
         {
             var client = listener.AcceptTcpClient();
 
-            if (playerCount>= State.State.MaxPlayers)
+            if (!freeSlots.TryDequeue(out int slot))
             {
                 client.GetStream().Write(new LobbyFull().Serialize());
                 client.Close();
+                continue;
             }
-            playerCount++;
-            Task.Run(new ClientHandler(client,messageBuffer).Handle);
+
+            Task.Run(new ClientHandler(client, slot, messageBuffer, broadcastBlock,
+                () => freeSlots.Enqueue(slot)).Handle);
         }
-        
+
         listener.Stop();
     }
 
     public CancellationTokenSource RunAsync()
     {
-        cts.Cancel();
+        cts?.Cancel();
         cts = new();
         Task.Run(Run);
         return cts;
-    } 
+    }
 }
