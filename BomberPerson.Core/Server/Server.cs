@@ -16,13 +16,14 @@ public class Server(int port, long address)
 {
     CancellationTokenSource cts;
     private Task task;
+    private BroadcastBlock<IMessage> broadcastBlock;
 
     public async Task Run()
     {
         // construct server dataflow pipeline
         var messageBuffer = new BufferBlock<IMessage>();
         var simulationBlock = new TransformManyBlock<IMessage,IMessage>(new Simulation(new State.State()).ProcessMessage);
-        var broadcastBlock = new BroadcastBlock<IMessage>(message => message);
+        broadcastBlock = new BroadcastBlock<IMessage>(message => message);
         var feedbackBlock = new RealisationDateBlock<IMessage>(FeedBackMessage.GetRealisationDate);
 
         messageBuffer.LinkTo(simulationBlock, new DataflowLinkOptions{ PropagateCompletion = true });
@@ -79,6 +80,7 @@ public class Server(int port, long address)
 
     public void RequestStop()
     {
+        broadcastBlock?.Post(new ServerStoppingMessage());
         cts?.Cancel();
         try
         {

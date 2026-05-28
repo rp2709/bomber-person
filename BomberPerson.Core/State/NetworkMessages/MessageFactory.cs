@@ -26,6 +26,7 @@ public static class NetworkMessageFactory
             MessageType.PutBomb => new PutBombMessage(new BinaryReader(stream).ReadUInt32(), new BinaryReader(stream).ReadUInt32()),
             MessageType.FlipReady => new FlipReadyMessage(),
             MessageType.JoinRequest => new JoinRequestMessage(new BinaryReader(stream).ReadString()),
+            MessageType.ServerStopping => new ServerStoppingMessage(),
             _ => throw new InvalidDataException($"Unknown message type: {typeByte}")
         };
 
@@ -50,6 +51,7 @@ public static class NetworkMessageFactory
             MessageType.PutBomb => new PutBombMessage(new BinaryReader(stream).ReadUInt32(), new BinaryReader(stream).ReadUInt32()),
             MessageType.FlipReady => new FlipReadyMessage(),
             MessageType.JoinRequest => new JoinRequestMessage(new BinaryReader(stream).ReadString()),
+            MessageType.ServerStopping => new ServerStoppingMessage(),
             _ => throw new InvalidDataException($"Unknown message type: {typeByte}")
         };
 

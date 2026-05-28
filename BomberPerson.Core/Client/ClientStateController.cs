@@ -48,7 +48,7 @@ public class ClientStateController
     {
         try
         {
-            await Task.Delay(5000, token);
+            await Task.Delay(3000, token);
             _statusMessage = null;
         }
         catch (TaskCanceledException)
@@ -67,6 +67,12 @@ public class ClientStateController
         {
             StatusMessage = new StatusMessage("Lobby is full", StatusMessage.ImportanceLevels.Error);
             networkClient?.Disconnect();
+        }
+        else if (message is ServerStoppingMessage)
+        {
+            StatusMessage = new StatusMessage("Server is stopping", StatusMessage.ImportanceLevels.Info);
+            _state = new();
+            QuitLobby();
         }
     }
 

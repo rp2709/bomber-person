@@ -10,4 +10,5 @@ public enum MessageType : byte
     PutBomb,
     FlipReady,
     JoinRequest,
+    ServerStopping,
 }
