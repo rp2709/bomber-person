@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using BomberPerson.Core.Messages;
 using BomberPerson.Core.State.NetworkMessages;
@@ -20,8 +21,11 @@ public class Simulation(State.State state)
         Color.FromArgb(220, 200, 40),
     };
 
+    private static int countDownStart = 10;
+
     public IMessage[] ProcessMessage(IMessage message)
     {
+        List<IMessage> messages = new();
         switch (message)
         {
             case NewPlayerMessage joined:
@@ -35,13 +39,33 @@ public class Simulation(State.State state)
 
             case FlipReadyMessage ready:
                 Find(ready.SlotId)?.FlipReady();
+                if (state.Players.TrueForAll(player => player.Ready))
+                {
+                    state.CountDownValue = countDownStart;
+                    messages.Add(new CountDownProgressMessage(DateTimeOffset.Now + TimeSpan.FromSeconds(1)));
+                }
+                else
+                {
+                    state.CountDownValue = -1;
+                }
                 break;
-
-            default:
-                return Array.Empty<IMessage>();
+            
+            case CountDownProgressMessage progress:
+                if (state.CountDownValue > 0)
+                {
+                    state.CountDownValue--;
+                    messages.Add(new CountDownProgressMessage(DateTimeOffset.Now + TimeSpan.FromSeconds(1)));
+                } else if (state.CountDownValue == 0)
+                {
+                    state.CountDownValue = -1;
+                    state.CurrentPhase = State.State.Phase.Game;
+                }
+                break;
         }
 
-        return [new NewStateMessage(state)];
+        messages.Add(new NewStateMessage(state));
+        
+        return messages.ToArray();
     }
 
     private State.Player Find(int slot)

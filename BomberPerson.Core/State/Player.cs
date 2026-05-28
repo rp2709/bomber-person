@@ -26,13 +26,6 @@ public class Player(int number, string name, Color color) : IReadOnlyPlayer
     public bool Ready { get; private set; } = false;
     public void FlipReady(){Ready = !Ready;}
     public void SetReady(bool ready){Ready = ready;}
-
-    public void NextColor()
-    {
-        if (Ready)return;
-        Color = Color.Aqua;
-    }
-
     public void Encode(BinaryWriter writer)
     {
         writer.Write(Number);

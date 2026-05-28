@@ -23,9 +23,12 @@ public class Server(int port, long address)
         var messageBuffer = new BufferBlock<IMessage>();
         var simulationBlock = new TransformManyBlock<IMessage,IMessage>(new Simulation(new State.State()).ProcessMessage);
         var broadcastBlock = new BroadcastBlock<IMessage>(message => message);
+        var feedbackBlock = new RealisationDateBlock<IMessage>(FeedBackMessage.GetRealisationDate);
 
         messageBuffer.LinkTo(simulationBlock, new DataflowLinkOptions{ PropagateCompletion = true });
         simulationBlock.LinkTo(broadcastBlock, new DataflowLinkOptions{ PropagateCompletion =  true},message => message is NetworkMessage);
+        simulationBlock.LinkTo(feedbackBlock, new DataflowLinkOptions{ PropagateCompletion = true },message => message is FeedBackMessage);
+        feedbackBlock.LinkTo(simulationBlock);
 
         // Player slots 0..MaxPlayers-1; a slot returns to the pool when its player leaves.
         var freeSlots = new ConcurrentQueue<int>(Enumerable.Range(0, State.State.MaxPlayers));
