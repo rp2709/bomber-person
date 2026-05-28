@@ -6,14 +6,14 @@ using System.Threading.Tasks.Dataflow;
 using BomberPerson.Core.Messages;
 using BomberPerson.Core.State.NetworkMessages;
 
-namespace BomberPerson.Core.Network;
+namespace BomberPerson.Core.Client;
 
 /// <summary>
 /// Client-side TCP endpoint. The host (connecting to 127.0.0.1) and remote players use it
 /// identically. Outbound messages go through an <see cref="ActionBlock{T}"/> with
 /// MaxDegreeOfParallelism = 1, so the socket has a single writer and needs no locks.
 /// </summary>
-public class Client : IDisposable
+public class NetworkClient : IDisposable
 {
     private TcpClient tcp;
     private ActionBlock<IMessage> outbound;

@@ -1,4 +1,5 @@
 ﻿using System;
+using BomberPerson.Core.Client;
 using BomberPerson.Core.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
@@ -6,10 +7,8 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace BomberPerson.Core.Scene;
 
-public class MainMenuScene : IScene
-{
-    public SceneManager SceneManager { get; private set; }
-
+    public class MainMenuScene(ClientStateController clientStateController) : Scene(clientStateController)
+    {
     private SpriteFont  fontTitle;
     private SpriteFont  fontButton;
     private Texture2D   pixel;
@@ -17,14 +16,9 @@ public class MainMenuScene : IScene
     private Button      btnJoin;
 
     private const string Title = "Bomberman";
-
-    public MainMenuScene()
-    {
-    }
     
-    public void LoadContent(ContentManager content, GraphicsDevice graphicsDevice, SceneManager sceneManager)
+    public override void LoadContent(ContentManager content, GraphicsDevice graphicsDevice)
     {
-        SceneManager = sceneManager;
         // Polices — à créer dans le Content Pipeline MonoGame
         fontTitle  = content.Load<SpriteFont>("Fonts/TitleFont");
         fontButton = content.Load<SpriteFont>("Fonts/ButtonFont");
@@ -50,19 +44,19 @@ public class MainMenuScene : IScene
         btnJoin.OnClick += OnJoinClicked;
     }
 
-    public void UnloadContent()
+    public override void UnloadContent()
     {
         btnHost.OnClick -= OnHostClicked;
         btnJoin.OnClick -= OnJoinClicked;
     }
 
-    public void Update(GameTime gameTime)
+    public override void Update(GameTime gameTime)
     {
         btnHost?.Update(gameTime);
         btnJoin?.Update(gameTime);
     }
 
-    public void Draw(SpriteBatch spriteBatch)
+    public override void Draw(SpriteBatch spriteBatch)
     {
         Viewport viewport = spriteBatch.GraphicsDevice.Viewport;
 
@@ -76,6 +70,6 @@ public class MainMenuScene : IScene
         btnJoin.Draw(spriteBatch, pixel);
     }
 
-    private void OnHostClicked() => SceneManager.LoadScene(EScene.HostMenu);
-    private void OnJoinClicked() => SceneManager.LoadScene(EScene.JoinMenu);
+    private void OnHostClicked() => ClientStateController.GoToHostMenu();
+    private void OnJoinClicked() => ClientStateController.GoToJoinMenu();
 }

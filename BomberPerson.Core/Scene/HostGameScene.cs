@@ -1,7 +1,7 @@
 ﻿
 using System.Threading.Tasks;
+using BomberPerson.Core.Client;
 using BomberPerson.Core.Lobby;
-using BomberPerson.Core.Network;
 using BomberPerson.Core.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
@@ -10,10 +10,8 @@ using Microsoft.Xna.Framework.Input;
 
 namespace BomberPerson.Core.Scene;
 
-public class HostGameScene : IScene
+public class HostGameScene(ClientStateController clientStateController) : Scene(clientStateController)
 {
-    public SceneManager SceneManager { get; private set; }
-
     private SpriteFont fontTitle;
     private SpriteFont fontUI;
     private Texture2D  pixel;
@@ -23,15 +21,9 @@ public class HostGameScene : IScene
     private TextField fieldPassword;
     private Button    btnCreate;
     private Button    btnBack;
-
-    private string errorMessage = "";
-
-    private Task<bool> connectTask;
-
-    public void LoadContent(ContentManager content, GraphicsDevice graphicsDevice, SceneManager sceneManager)
+    
+    public override void LoadContent(ContentManager content, GraphicsDevice graphicsDevice)
     {
-        SceneManager = sceneManager;
-
         fontTitle = content.Load<SpriteFont>("Fonts/TitleFont");
         fontUI    = content.Load<SpriteFont>("Fonts/ButtonFont");
 
@@ -66,14 +58,13 @@ public class HostGameScene : IScene
         fieldPort.SetValue("7777");
     }
 
-    public void UnloadContent()
+    public override void UnloadContent()
     {
         btnCreate.OnClick -= OnCreateClicked;
         btnBack.OnClick   -= OnBackClicked;
-        errorMessage = string.Empty;
     }
 
-    public void Update(GameTime gameTime)
+    public override void Update(GameTime gameTime)
     {
         KeyboardState keyboard = Keyboard.GetState();
         MouseState mouse    = Mouse.GetState();
@@ -83,29 +74,9 @@ public class HostGameScene : IScene
         fieldPassword.Update(gameTime, keyboard, mouse);
         btnCreate.Update(gameTime);
         btnBack.Update(gameTime);
-
-        // Connexion lancée par OnCreateClicked : on traite sa fin ICI, sur le thread
-        // principal, car le passage au lobby crée des textures GPU.
-        if (connectTask != null && connectTask.IsCompleted)
-        {
-            bool connected = connectTask.IsCompletedSuccessfully && connectTask.Result;
-            connectTask = null;
-
-            if (connected)
-            {
-                LobbyScene scene = (LobbyScene)SceneManager.LoadScene(EScene.LobbyMenu);
-                LobbyManager.Instance.SetLobby(scene, fieldGameName.Value);
-                // Players are filled by the server's snapshots, received over the host's own client.
-            }
-            else
-            {
-                errorMessage = "Impossible de démarrer le serveur.";
-                NetworkManager.Instance.Disconnect();
-            }
-        }
     }
 
-    public void Draw(SpriteBatch spriteBatch)
+    public override void Draw(SpriteBatch spriteBatch)
     {
         Viewport viewport  = spriteBatch.GraphicsDevice.Viewport;
         Vector2 titleSize = fontTitle.MeasureString("Host Game");
@@ -129,30 +100,22 @@ public class HostGameScene : IScene
 
     private void OnBackClicked()
     {
-        SceneManager.LoadScene(EScene.MainMenu);
+        ClientStateController.GoToMainMenu();
     }
 
     private void OnCreateClicked()
     {
-        if (connectTask != null) return; // connexion déjà en cours
-
         if (string.IsNullOrWhiteSpace(fieldGameName.Value))
         {
-            errorMessage = "Le nom de la partie est requis.";
+            // Error handling could also be moved to controller but for now we keep simple validation here
             return;
         }
 
         if (!int.TryParse(fieldPort.Value, out int port) || port < 1024 || port > 65535)
         {
-            errorMessage = "Port invalide (1024 - 65535).";
             return;
         }
 
-        errorMessage = "Démarrage du serveur...";
-
-        // The host starts the server in-process, then connects to it over loopback as a normal
-        // client. The result is handled in Update (main thread); see the connectTask poll.
-        NetworkManager.Instance.StartServer(port, fieldPassword.Value);
-        connectTask = NetworkManager.Instance.ConnectAsync("127.0.0.1", port, "Host", fieldPassword.Value);
+        ClientStateController.HostGame(fieldGameName.Value, port, fieldPassword.Value);
     }
 }

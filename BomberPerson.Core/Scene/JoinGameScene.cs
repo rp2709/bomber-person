@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
+using BomberPerson.Core.Client;
 using BomberPerson.Core.Lobby;
-using BomberPerson.Core.Network;
 using BomberPerson.Core.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
@@ -9,10 +9,8 @@ using Microsoft.Xna.Framework.Input;
 
 namespace BomberPerson.Core.Scene;
 
-public class JoinGameScene : IScene
+public class JoinGameScene(ClientStateController clientStateController) : Scene(clientStateController)
 {
-    public SceneManager SceneManager { get; private set; }
-
     private SpriteFont fontTitle;
     private SpriteFont fontUI;
     private Texture2D  pixel;
@@ -24,14 +22,10 @@ public class JoinGameScene : IScene
     private Button    btnJoin;
     private Button    btnBack;
 
-    private string errorMessage = "";
+    private string errorMessage => ClientStateController.ErrorMessage;
 
-    private Task<bool> connectTask;
-    private int        pendingPort;
-
-    public void LoadContent(ContentManager content, GraphicsDevice graphicsDevice, SceneManager manager)
+    public override void LoadContent(ContentManager content, GraphicsDevice graphicsDevice)
     {
-        SceneManager = manager;
 
         fontTitle = content.Load<SpriteFont>("Fonts/TitleFont");
         fontUI    = content.Load<SpriteFont>("Fonts/ButtonFont");
@@ -69,13 +63,13 @@ public class JoinGameScene : IScene
         fieldPort.SetValue("7777");
     }
 
-    public void UnloadContent()
+    public override void UnloadContent()
     {
         btnJoin.OnClick -= OnJoinClicked;
         btnBack.OnClick -= OnBackClicked;
     }
 
-    public void Update(GameTime gameTime)
+    public override void Update(GameTime gameTime)
     {
         KeyboardState keyboard = Keyboard.GetState();
         MouseState    mouse    = Mouse.GetState();
@@ -86,26 +80,9 @@ public class JoinGameScene : IScene
         fieldPassword.Update(gameTime, keyboard, mouse);
         btnJoin.Update(gameTime);
         btnBack.Update(gameTime);
-
-        // Fin de la connexion traitée sur le thread principal (le lobby crée des textures GPU).
-        if (connectTask != null && connectTask.IsCompleted)
-        {
-            bool connected = connectTask.IsCompletedSuccessfully && connectTask.Result;
-            connectTask = null;
-
-            if (connected)
-            {
-                LobbyScene scene = (LobbyScene)SceneManager.LoadScene(EScene.LobbyMenu);
-                LobbyManager.Instance.SetLobby(scene, $"{fieldIP.Value}:{pendingPort}");
-            }
-            else
-            {
-                errorMessage = "Impossible de se connecter au serveur.";
-            }
-        }
     }
 
-    public void Draw(SpriteBatch spriteBatch)
+    public override void Draw(SpriteBatch spriteBatch)
     {
         Viewport viewport  = spriteBatch.GraphicsDevice.Viewport;
         Vector2  titleSize = fontTitle.MeasureString("Join Game");
@@ -130,32 +107,12 @@ public class JoinGameScene : IScene
 
     private void OnJoinClicked()
     {
-        if (connectTask != null) return; // connexion déjà en cours
+        if (string.IsNullOrWhiteSpace(fieldPlayerName.Value)) return;
+        if (string.IsNullOrWhiteSpace(fieldIP.Value)) return;
+        if (!int.TryParse(fieldPort.Value, out int port) || port < 1024 || port > 65535) return;
 
-        if (string.IsNullOrWhiteSpace(fieldPlayerName.Value))
-        {
-            errorMessage = "Le nom du joueur est requis.";
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(fieldIP.Value))
-        {
-            errorMessage = "L'adresse IP est requise.";
-            return;
-        }
-
-        if (!int.TryParse(fieldPort.Value, out int port) || port < 1024 || port > 65535)
-        {
-            errorMessage = "Port invalide (1024 - 65535).";
-            return;
-        }
-
-        errorMessage = "Connexion en cours...";
-
-        // Résultat traité dans Update (thread principal) ; voir le poll de connectTask.
-        pendingPort = port;
-        connectTask = NetworkManager.Instance.ConnectAsync(fieldIP.Value, port, fieldPlayerName.Value, fieldPassword.Value);
+        ClientStateController.JoinGame(fieldPlayerName.Value, fieldIP.Value, port, fieldPassword.Value);
     }
     
-    private void OnBackClicked() => SceneManager.LoadScene(EScene.MainMenu);
+    private void OnBackClicked() => ClientStateController.GoToMainMenu();
 }

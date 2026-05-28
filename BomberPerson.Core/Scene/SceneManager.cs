@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using BomberPerson.Core.Client;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -14,34 +15,14 @@ public enum EScene
     LobbyMenu,
 }
 
-public class SceneManager
+public class SceneManager(ContentManager content, GraphicsDevice graphicsDevice)
 {
-    private readonly ContentManager content;
-    private readonly GraphicsDevice graphicsDevice;
-
-    private Dictionary<EScene, IScene> scenes = new Dictionary<EScene, IScene>()
+    private Scene currentScene;
+    public Scene LoadScene(Scene scene)
     {
-        { EScene.MainMenu, new MainMenuScene() },
-        { EScene.HostMenu, new HostGameScene() },
-        { EScene.JoinMenu, new JoinGameScene() },
-        { EScene.LobbyMenu, new LobbyScene() },
-    };
-    
-    private IScene currentScene;
-
-    public SceneManager(ContentManager content, GraphicsDevice graphicsDevice, EScene defaultScene)
-    {
-        this.content        = content;
-        this.graphicsDevice = graphicsDevice;
-        LoadScene(defaultScene);
-    }
-
-    public IScene LoadScene(EScene scene)
-    {
-        if (!scenes.TryGetValue(scene, out IScene sceneObject))  return null;
         currentScene?.UnloadContent();
-        currentScene = sceneObject;
-        currentScene?.LoadContent(content, graphicsDevice, this);
+        currentScene = scene;
+        currentScene?.LoadContent(content, graphicsDevice);
         return currentScene;
     }
 

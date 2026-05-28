@@ -14,6 +14,7 @@ namespace BomberPerson.Core.Server;
 public class Server(int port, long address)
 {
     CancellationTokenSource cts;
+    private Task task;
 
     public void Run()
     {
@@ -48,11 +49,16 @@ public class Server(int port, long address)
         listener.Stop();
     }
 
-    public CancellationTokenSource RunAsync()
+    public void RunAsync()
     {
         cts?.Cancel();
+        task?.Wait();
         cts = new();
-        Task.Run(Run);
-        return cts;
+        task = Task.Run(Run);
+    }
+
+    public void RequestStop()
+    {
+        cts?.Cancel();
     }
 }

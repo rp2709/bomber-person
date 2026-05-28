@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
+using BomberPerson.Core.Client;
 using BomberPerson.Core.Lobby;
-using BomberPerson.Core.Network;
 using BomberPerson.Core.State.NetworkMessages;
 using BomberPerson.Core.UI;
 using Microsoft.Xna.Framework;
@@ -9,9 +9,8 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace BomberPerson.Core.Scene;
 
-public class LobbyScene : IScene
+public class LobbyScene(ClientStateController controller) : Scene(controller)
 {
-    public SceneManager SceneManager { get; private set; }
     private string gameName = "Bomber Person";
 
     private SpriteFont fontTitle;
@@ -39,21 +38,13 @@ public class LobbyScene : IScene
         new Color(220, 200, 40),
     };
 
-    public LobbyScene()
-    {
-        //this.gameName = gameName;
-        LobbyManager.Instance.Reset();
-    }
-
     public void SetName(string name)
     {
         gameName = name;
     }
 
-    public void LoadContent(ContentManager content, GraphicsDevice graphicsDevice, SceneManager sceneManager)
+    public override void LoadContent(ContentManager content, GraphicsDevice graphicsDevice)
     {
-        SceneManager = sceneManager;
-
         fontTitle = content.Load<SpriteFont>("Fonts/TitleFont");
         fontUI    = content.Load<SpriteFont>("Fonts/ButtonFont");
 
@@ -82,20 +73,20 @@ public class LobbyScene : IScene
         btnQuit.OnClick += OnQuitClicked;
     }
 
-    public void UnloadContent()
+    public override void UnloadContent()
     {
         btnReady.OnClick -= OnReadyClicked;
         btnQuit.OnClick -= OnQuitClicked;
     }
 
-    public void Update(GameTime gameTime)
+    public override void Update(GameTime gameTime)
     {
         // Réagir aux changements du LobbyManager mis à jour par les AuthorityTask
         
         if (LobbyManager.Instance.HostLeft)
         {
             //NetworkManager.Instance.Disconnect();
-            SceneManager.LoadScene(EScene.MainMenu);
+            
             return;
         }
         
@@ -114,7 +105,7 @@ public class LobbyScene : IScene
         //if (NetworkManager.Instance.IsServer) btnStart.Update(gameTime);
     }
 
-    public void Draw(SpriteBatch spriteBatch)
+    public override void Draw(SpriteBatch spriteBatch)
     {
         Viewport viewport = spriteBatch.GraphicsDevice.Viewport;
         int      screenW  = viewport.Width;
@@ -253,8 +244,7 @@ public class LobbyScene : IScene
         localReady = !localReady;
         btnReady.SetLabel(localReady ? "Pas prêt" : "Prêt");
 
-        // On envoie l'intention au serveur ; la pastille se met à jour au retour du NewState.
-        NetworkManager.Instance.Send(new SetReadyMessage(localReady));
+        ClientStateController.SetReady(localReady);
     }
 
     private void OnStartClicked()
@@ -266,6 +256,6 @@ public class LobbyScene : IScene
     {
         //NetworkManager.Instance.SendToServer(new PlayerLeftRequestTask());
         //NetworkManager.Instance.Disconnect();
-        SceneManager.LoadScene(EScene.MainMenu);
+        ClientStateController.QuitLobby();
     }
 }

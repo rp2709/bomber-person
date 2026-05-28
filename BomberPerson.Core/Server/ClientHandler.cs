@@ -28,6 +28,7 @@ public class ClientHandler(
             {
                 if (message is NetworkMessage networkMessage)
                 {
+                    networkMessage.SlotId = slot;
                     try { stream.Write(networkMessage.Serialize()); }
                     catch { /* socket gone; the read loop will tear things down */ }
                 }

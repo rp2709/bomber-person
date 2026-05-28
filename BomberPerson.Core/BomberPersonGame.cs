@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using BomberPerson.Core.Client;
 using BomberPerson.Core.Scene;
 using BomberPerson.Core.UI;
 using Microsoft.Xna.Framework;
@@ -24,7 +25,8 @@ namespace BomberPerson.Core
         private GraphicsDeviceManager graphicsDeviceManager;
         private SpriteBatch spriteBatch;
 
-        private SceneManager sceneManager;
+        private SceneManager           sceneManager;
+        private ClientStateController clientStateController;
 
         /// <summary>
         /// Initializes a new instance of the game. Configures platform-specific settings, 
@@ -64,7 +66,8 @@ namespace BomberPerson.Core
         protected override void LoadContent()
         {
             spriteBatch = new SpriteBatch(GraphicsDevice);
-            sceneManager = new SceneManager(Content, GraphicsDevice, EScene.MainMenu);
+            sceneManager = new SceneManager(Content, GraphicsDevice);
+            clientStateController = new ClientStateController(sceneManager);
         }
         
         protected override void Update(GameTime gameTime)
