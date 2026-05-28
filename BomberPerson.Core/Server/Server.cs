@@ -1,3 +1,4 @@
+using System;
 using BomberPerson.Core.State;
 using System.Collections.Concurrent;
 using System.Linq;
@@ -16,7 +17,7 @@ public class Server(int port, long address)
     CancellationTokenSource cts;
     private Task task;
 
-    public void Run()
+    public async Task Run()
     {
         // construct server dataflow pipeline
         var messageBuffer = new BufferBlock<IMessage>();
@@ -31,28 +32,44 @@ public class Server(int port, long address)
 
         using TcpListener listener = new TcpListener(new IPEndPoint(new IPAddress(address), port));
         listener.Start();
-        while (!cts.IsCancellationRequested)
+        try
         {
-            var client = listener.AcceptTcpClient();
-
-            if (!freeSlots.TryDequeue(out int slot))
+            while (!cts.IsCancellationRequested)
             {
-                client.GetStream().Write(new LobbyFull().Serialize());
-                client.Close();
-                continue;
+                var client = await listener.AcceptTcpClientAsync(cts.Token);
+
+                if (!freeSlots.TryDequeue(out int slot))
+                {
+                    client.GetStream().Write(new LobbyFull().Serialize());
+                    client.Close();
+                    continue;
+                }
+
+                Task.Run(new ClientHandler(client, slot, messageBuffer, broadcastBlock,
+                    () => freeSlots.Enqueue(slot), cts.Token).Handle);
             }
-
-            Task.Run(new ClientHandler(client, slot, messageBuffer, broadcastBlock,
-                () => freeSlots.Enqueue(slot)).Handle);
         }
-
-        listener.Stop();
+        catch (OperationCanceledException)
+        {
+            // Normal exit
+        }
+        finally
+        {
+            listener.Stop();
+        }
     }
 
     public void RunAsync()
     {
         cts?.Cancel();
-        task?.Wait();
+        try
+        {
+            task?.Wait();
+        }
+        catch (AggregateException)
+        {
+            // Ignore cancellation exception from the task
+        }
         cts = new();
         task = Task.Run(Run);
     }
@@ -60,5 +77,13 @@ public class Server(int port, long address)
     public void RequestStop()
     {
         cts?.Cancel();
+        try
+        {
+            task?.Wait();
+        }
+        catch (AggregateException)
+        {
+            // Ignore cancellation exception
+        }
     }
 }

@@ -1,5 +1,7 @@
 using System;
 using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using BomberPerson.Core.Messages;
 using BomberPerson.Core.State.NetworkMessages;
@@ -17,9 +19,10 @@ public class ClientHandler(
     int slot,
     BufferBlock<IMessage> messageBuffer,
     ISourceBlock<IMessage> broadcast,
-    Action onExit)
+    Action onExit,
+    CancellationToken token)
 {
-    public void Handle()
+    public async Task Handle()
     {
         NetworkStream stream = client.GetStream();
 
@@ -38,17 +41,24 @@ public class ClientHandler(
         // Subscribe before announcing the join, so the resulting snapshot reaches this client.
         using IDisposable link = broadcast.LinkTo(outbound);
 
-        messageBuffer.Post(new NewPlayerMessage(slot));
-
         try
         {
-            while (client.Connected)
+            while (client.Connected && !token.IsCancellationRequested)
             {
-                IMessage message = NetworkMessageFactory.FromStream(stream,slot);
+                IMessage message = await NetworkMessageFactory.FromStreamAsync(stream, token, slot);
                 if (message is null or LeaveGameMessage) break;                 // peer disconnected or leaving
-                messageBuffer.Post(message);
+                
+                if (message is JoinRequestMessage joinRequest)
+                {
+                    messageBuffer.Post(new NewPlayerMessage(slot, joinRequest.PlayerName));
+                }
+                else
+                {
+                    messageBuffer.Post(message);
+                }
             }
         }
+        catch (OperationCanceledException) { /* server stopping */ }
         catch { /* socket reset or malformed frame */ }
         finally
         {

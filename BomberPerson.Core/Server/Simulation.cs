@@ -26,15 +26,15 @@ public class Simulation(State.State state)
         {
             case NewPlayerMessage joined:
                 if (Find(joined.Slot) == null)
-                    state.Players.Add(new State.Player(joined.Slot, Palette[joined.Slot % Palette.Length]));
+                    state.Players.Add(new State.Player(joined.Slot, joined.Name, Palette[joined.Slot % Palette.Length]));
                 break;
 
             case PlayerLeftMessage left:
                 Remove(left.Slot);
                 break;
 
-            case SetReadyMessage ready:
-                Find(ready.SlotId)?.SetReady(ready.Ready);
+            case FlipReadyMessage ready:
+                Find(ready.SlotId)?.FlipReady();
                 break;
 
             default:

@@ -1,12 +1,24 @@
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Numerics;
 
 namespace BomberPerson.Core.State;
 
-public class Player(int number, Color color)
+public interface IReadOnlyPlayer
+{
+    int Number { get; }
+    string Name { get; }
+    Color Color { get; }
+    Vector2 Position { get; }
+    Vector2 Velocity { get; }
+    bool Ready { get; }
+}
+
+public class Player(int number, string name, Color color) : IReadOnlyPlayer
 {
     public int Number { get; private set; } = number;
+    public string Name { get; private set; } = name;
     public Color Color { get; private set; } = color;
 
     public Vector2 Position { get; set; }= Vector2.Zero;
@@ -24,6 +36,7 @@ public class Player(int number, Color color)
     public void Encode(BinaryWriter writer)
     {
         writer.Write(Number);
+        writer.Write(Name);
         writer.Write(Color.ToArgb());
         writer.Write(Position.X);
         writer.Write(Position.Y);
@@ -35,8 +48,9 @@ public class Player(int number, Color color)
     public static Player Decode(BinaryReader reader)
     {
         var number = reader.ReadInt32();
+        var name = reader.ReadString();
         var color = Color.FromArgb(reader.ReadInt32());
-        var player = new Player(number, color)
+        var player = new Player(number, name, color)
         {
             Position = new Vector2(reader.ReadSingle(), reader.ReadSingle()),
             Velocity = new Vector2(reader.ReadSingle(), reader.ReadSingle()),

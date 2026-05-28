@@ -1,9 +1,18 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace BomberPerson.Core.State;
 
-public class State
+public interface IReadOnlyState
+{
+    State.Phase CurrentPhase { get; }
+    IReadOnlyList<IReadOnlyPlayer> Players { get; }
+    IReadOnlyList<Bomb> Bombs { get; }
+    Terrain Terrain { get; }
+}
+
+public class State : IReadOnlyState
 {
     public const int MaxPlayers = 4;
     public enum Phase
@@ -16,7 +25,9 @@ public class State
     public Phase CurrentPhase { get; set; } =  Phase.Lobby;
 
     public List<Player> Players { get; }= new();
+    IReadOnlyList<IReadOnlyPlayer> IReadOnlyState.Players => Players;
     public List<Bomb> Bombs { get; } = new();
+    IReadOnlyList<Bomb> IReadOnlyState.Bombs => Bombs;
     public Terrain Terrain { get; set; }= new();
 
     public byte[] Encode()
