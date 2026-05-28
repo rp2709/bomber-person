@@ -5,6 +5,8 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using BomberPerson.Core.Messages;
+using BomberPerson.Core.State.NetworkMessages;
 
 namespace BomberPerson.Core.Server;
 
@@ -15,8 +17,8 @@ public class Server(int port, long address)
     public void Run()
     {
         // construct server dataflow pipeline
-        var messageBuffer = new BufferBlock<Message>();
-        var simulationBlock = new TransformBlock<Message,State.State>(new Simulation(new State.State()).ProcessMessage);
+        var messageBuffer = new BufferBlock<IMessage>();
+        var simulationBlock = new TransformBlock<IMessage,State.State>(new Simulation(new State.State()).ProcessMessage);
         var broadcastBlock = new BroadcastBlock<State.State>((state1 => state1));
         
         messageBuffer.LinkTo(simulationBlock, new DataflowLinkOptions());
@@ -30,7 +32,7 @@ public class Server(int port, long address)
 
             if (playerCount>= State.State.MaxPlayers)
             {
-                // send error to client
+                client.GetStream().Write(new LobbyFull().Serialize());
                 client.Close();
             }
             playerCount++;

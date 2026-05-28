@@ -1,19 +1,23 @@
 using System.Net.Sockets;
 using System.Threading.Tasks.Dataflow;
+using BomberPerson.Core.Messages;
+using BomberPerson.Core.State.NetworkMessages;
 
 namespace BomberPerson.Core.Server;
 
-public class ClientHandler(TcpClient client,BufferBlock<Message> messageBuffer)
+public class ClientHandler(TcpClient client,BufferBlock<IMessage> messageBuffer)
 {
     public void Handle()
     {
-        // send client joined message
+        messageBuffer.Post(new NewPlayerMessage());
         while (client.Connected)
         {
-            // read message
-            
-            // if message is leave game : client.Close();
-            // else put message in buffer
+            var message = NetworkMessageFactory.FromStream(client.GetStream());
+            if (message is LeaveGameMessage)
+            {
+                client.Close();
+            }
+            messageBuffer.Post(message);
         }
         
         // send client disconnected message
