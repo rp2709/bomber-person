@@ -1,7 +1,6 @@
 ﻿
 using System.Threading.Tasks;
 using BomberPerson.Core.Client;
-using BomberPerson.Core.Lobby;
 using BomberPerson.Core.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
@@ -22,6 +21,14 @@ public class HostGameScene(ClientStateController clientStateController) : Scene(
     private Button    btnCreate;
     private Button    btnBack;
     
+    private string errorMessage => ClientStateController.StatusMessage?.Importance == StatusMessage.ImportanceLevels.Error 
+        ? ClientStateController.StatusMessage.Message 
+        : null;
+
+    private string infoMessage => ClientStateController.StatusMessage?.Importance != StatusMessage.ImportanceLevels.Error 
+        ? ClientStateController.StatusMessage?.Message 
+        : null;
+
     public override void LoadContent(ContentManager content, GraphicsDevice graphicsDevice)
     {
         fontTitle = content.Load<SpriteFont>("Fonts/TitleFont");
@@ -95,6 +102,12 @@ public class HostGameScene(ClientStateController clientStateController) : Scene(
             Vector2 errSize = fontUI.MeasureString(errorMessage);
             Vector2 errPos  = new Vector2((viewport.Width - errSize.X) / 2f, titlePos.Y + titleSize.Y + 10);
             spriteBatch.DrawString(fontUI, errorMessage, errPos, Color.Red);
+        }
+        else if (!string.IsNullOrEmpty(infoMessage))
+        {
+            Vector2 infoSize = fontUI.MeasureString(infoMessage);
+            Vector2 infoPos  = new Vector2((viewport.Width - infoSize.X) / 2f, titlePos.Y + titleSize.Y + 10);
+            spriteBatch.DrawString(fontUI, infoMessage, infoPos, Color.Yellow);
         }
     }
 

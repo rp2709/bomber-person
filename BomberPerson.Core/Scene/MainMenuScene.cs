@@ -40,14 +40,14 @@ namespace BomberPerson.Core.Scene;
         btnHost = new Button("Host Game", new Rectangle(btnX, centerY, btnWidth, btnHeight), fontButton);
         btnJoin = new Button("Join Game", new Rectangle(btnX, centerY + btnHeight + spacing, btnWidth, btnHeight), fontButton);
         
-        btnHost.OnClick += OnHostClicked;
-        btnJoin.OnClick += OnJoinClicked;
+        btnHost.OnClick += ClientStateController.GoToHostMenu;
+        btnJoin.OnClick += ClientStateController.GoToJoinMenu;
     }
 
     public override void UnloadContent()
     {
-        btnHost.OnClick -= OnHostClicked;
-        btnJoin.OnClick -= OnJoinClicked;
+        btnHost.OnClick -= ClientStateController.GoToHostMenu;
+        btnJoin.OnClick -= ClientStateController.GoToJoinMenu;
     }
 
     public override void Update(GameTime gameTime)
@@ -70,6 +70,4 @@ namespace BomberPerson.Core.Scene;
         btnJoin.Draw(spriteBatch, pixel);
     }
 
-    private void OnHostClicked() => ClientStateController.GoToHostMenu();
-    private void OnJoinClicked() => ClientStateController.GoToJoinMenu();
 }

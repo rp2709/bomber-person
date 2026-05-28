@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using BomberPerson.Core.Client;
-using BomberPerson.Core.Lobby;
-using BomberPerson.Core.State.NetworkMessages;
+using BomberPerson.Core.State;
 using BomberPerson.Core.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
@@ -38,6 +37,14 @@ public class LobbyScene(ClientStateController controller) : Scene(controller)
         new Color(220, 200, 40),
     };
 
+    private string errorMessage => ClientStateController.StatusMessage?.Importance == StatusMessage.ImportanceLevels.Error 
+        ? ClientStateController.StatusMessage.Message 
+        : null;
+
+    private string infoMessage => ClientStateController.StatusMessage?.Importance != StatusMessage.ImportanceLevels.Error 
+        ? ClientStateController.StatusMessage?.Message 
+        : null;
+
     public void SetName(string name)
     {
         gameName = name;
@@ -61,48 +68,22 @@ public class LobbyScene(ClientStateController controller) : Scene(controller)
         int centerX = screenW / 2;
 
         btnReady = new Button("Prêt", new Rectangle(centerX - btnW - 20, btnY, btnW, btnH), fontUI);
-        btnReady.OnClick += OnReadyClicked;
-        /*
-        if (NetworkManager.Instance.IsServer)
-        {
-            btnStart = new Button("Lancer", new Rectangle(centerX + 20, btnY, btnW, btnH), fontUI);
-            btnStart.OnClick += OnStartClicked;
-        }
-        */
+        btnReady.OnClick += ClientStateController.SetReady;
+        
         btnQuit = new Button("Quitter", new Rectangle(20, 20, 120, 40), fontUI);
-        btnQuit.OnClick += OnQuitClicked;
+        btnQuit.OnClick += ClientStateController.QuitLobby;
     }
 
     public override void UnloadContent()
     {
-        btnReady.OnClick -= OnReadyClicked;
-        btnQuit.OnClick -= OnQuitClicked;
+        btnReady.OnClick -= ClientStateController.SetReady;
+        btnQuit.OnClick -= ClientStateController.QuitLobby;
     }
 
     public override void Update(GameTime gameTime)
     {
-        // Réagir aux changements du LobbyManager mis à jour par les AuthorityTask
-        
-        if (LobbyManager.Instance.HostLeft)
-        {
-            //NetworkManager.Instance.Disconnect();
-            
-            return;
-        }
-        
-        
-        /*
-        if (LobbyManager.Instance.GameStarting)
-        {
-            // TODO : SceneManager.NavigateTo(new GameScene());
-            return;
-        }
-        */
-        
         btnReady.Update(gameTime);
         btnQuit.Update(gameTime);
-
-        //if (NetworkManager.Instance.IsServer) btnStart.Update(gameTime);
     }
 
     public override void Draw(SpriteBatch spriteBatch)
@@ -122,11 +103,17 @@ public class LobbyScene(ClientStateController controller) : Scene(controller)
 
         // Message d'erreur
         
-        if (!string.IsNullOrEmpty(LobbyManager.Instance.ErrorMessage))
+        if (!string.IsNullOrEmpty(errorMessage))
         {
-            Vector2 errSize = fontUI.MeasureString(LobbyManager.Instance.ErrorMessage);
+            Vector2 errSize = fontUI.MeasureString(errorMessage);
             Vector2 errPos  = new Vector2((screenW - errSize.X) / 2f, namePos.Y + nameSize.Y + 6);
-            spriteBatch.DrawString(fontUI, LobbyManager.Instance.ErrorMessage, errPos, Color.Red);
+            spriteBatch.DrawString(fontUI, errorMessage, errPos, Color.Red);
+        }
+        else if (!string.IsNullOrEmpty(infoMessage))
+        {
+            Vector2 infoSize = fontUI.MeasureString(infoMessage);
+            Vector2 infoPos  = new Vector2((screenW - infoSize.X) / 2f, namePos.Y + nameSize.Y + 6);
+            spriteBatch.DrawString(fontUI, infoMessage, infoPos, Color.Yellow);
         }
         
         DrawPlayerList(spriteBatch, viewport, (int)(namePos.Y + nameSize.Y + 40));
@@ -149,13 +136,20 @@ public class LobbyScene(ClientStateController controller) : Scene(controller)
         int gap    = 24;
         int totalW = slots * frameW + (slots - 1) * gap;
         int startX = (viewport.Width - totalW) / 2;
-
-        List<NetworkPlayer> players = LobbyManager.Instance.Players;
-
+        
         for (int slot = 0; slot < slots; slot++)
         {
             Rectangle     frame  = new Rectangle(startX + slot * (frameW + gap), startY, frameW, frameH);
-            NetworkPlayer player = FindBySlot(players, slot);
+
+            IReadOnlyPlayer player = null;
+            foreach (var p in ClientStateController.State.Players)
+            {
+                if (p.Number == slot)
+                {
+                    player = p;
+                    break;
+                }
+            }
 
             DrawFrame(spriteBatch, frame, player != null);
 
@@ -173,26 +167,19 @@ public class LobbyScene(ClientStateController controller) : Scene(controller)
             // Pastille prêt / pas prêt, coin haut droit du cadre.
             int       dot     = 28;
             Rectangle dotRect = new Rectangle(frame.Right - dot - 12, frame.Y + 12, dot, dot);
-            spriteBatch.Draw(pastille, dotRect, player.IsReady ? colorReady : colorNotReady);
+            spriteBatch.Draw(pastille, dotRect, player.Ready ? colorReady : colorNotReady);
 
             Vector2 nameSize = fontUI.MeasureString(player.Name);
             Vector2 namePos  = new Vector2(frame.X + (frameW - nameSize.X) / 2f, colorRect.Bottom + 16);
             spriteBatch.DrawString(fontUI, player.Name, namePos, Color.White);
 
-            if (player.IsHost)
+            if (player.Number == 0) // Assume first player is host
             {
                 Vector2 hostSize = fontUI.MeasureString("HOST");
                 Vector2 hostPos  = new Vector2(frame.X + (frameW - hostSize.X) / 2f, namePos.Y + nameSize.Y + 6);
                 spriteBatch.DrawString(fontUI, "HOST", hostPos, colorHost);
             }
         }
-    }
-
-    private static NetworkPlayer FindBySlot(List<NetworkPlayer> players, int slot)
-    {
-        foreach (NetworkPlayer p in players)
-            if (p.Id == slot) return p;
-        return null;
     }
 
     private void DrawFrame(SpriteBatch spriteBatch, Rectangle frame, bool occupied)
@@ -232,30 +219,5 @@ public class LobbyScene(ClientStateController controller) : Scene(controller)
 
         texture.SetData(data);
         return texture;
-    }
-
-    // -------------------------
-    // ACTIONS BOUTONS
-    // Les scènes envoient des RequestTask — pas de logique ici
-    // -------------------------
-
-    private void OnReadyClicked()
-    {
-        localReady = !localReady;
-        btnReady.SetLabel(localReady ? "Pas prêt" : "Prêt");
-
-        ClientStateController.SetReady(localReady);
-    }
-
-    private void OnStartClicked()
-    {
-        //NetworkManager.Instance.SendToServer(new GameStartRequestTask());
-    }
-
-    private void OnQuitClicked()
-    {
-        //NetworkManager.Instance.SendToServer(new PlayerLeftRequestTask());
-        //NetworkManager.Instance.Disconnect();
-        ClientStateController.QuitLobby();
     }
 }
