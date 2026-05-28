@@ -10,6 +10,7 @@ public interface IReadOnlyState
     IReadOnlyList<IReadOnlyPlayer> Players { get; }
     IReadOnlyList<Bomb> Bombs { get; }
     Terrain Terrain { get; }
+    int CountDownValue { get; }
 }
 
 public class State : IReadOnlyState
@@ -29,6 +30,7 @@ public class State : IReadOnlyState
     public List<Bomb> Bombs { get; } = new();
     IReadOnlyList<Bomb> IReadOnlyState.Bombs => Bombs;
     public Terrain Terrain { get; set; }= new();
+    public int CountDownValue { get; set; } = -1;
 
     public byte[] Encode()
     {
@@ -51,6 +53,7 @@ public class State : IReadOnlyState
         var terrainData = Terrain.Encode();
         writer.Write(terrainData.Length);
         writer.Write(terrainData);
+        writer.Write(CountDownValue);
 
         return ms.ToArray();
     }
@@ -79,6 +82,7 @@ public class State : IReadOnlyState
         byte[] terrainData = reader.ReadBytes(terrainDataLength);
         using var terrainMs = new MemoryStream(terrainData);
         state.Terrain = Terrain.Decode(terrainMs);
+        state.CountDownValue = reader.ReadInt32();
         return state;
     }
 }

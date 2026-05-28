@@ -109,6 +109,13 @@ public class LobbyScene(ClientStateController controller) : Scene(controller)
             Vector2 errPos  = new Vector2((screenW - errSize.X) / 2f, namePos.Y + nameSize.Y + 6);
             spriteBatch.DrawString(fontUI, errorMessage, errPos, Color.Red);
         }
+        else if (ClientStateController.State.CountDownValue > 0)
+        {
+            string countdownText = $"Starting in {ClientStateController.State.CountDownValue}...";
+            Vector2 cdSize = fontUI.MeasureString(countdownText);
+            Vector2 cdPos  = new Vector2((screenW - cdSize.X) / 2f, namePos.Y + nameSize.Y + 6);
+            spriteBatch.DrawString(fontUI, countdownText, cdPos, Color.Yellow);
+        }
         else if (!string.IsNullOrEmpty(infoMessage))
         {
             Vector2 infoSize = fontUI.MeasureString(infoMessage);

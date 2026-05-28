@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using BomberPerson.Core.Messages;
 using BomberPerson.Core.Scene;
@@ -22,7 +23,39 @@ public class ClientStateController
         GoToMainMenu();
     }
 
-    public StatusMessage StatusMessage { get; private set; }
+    private StatusMessage _statusMessage;
+    private CancellationTokenSource _statusCancellationTokenSource;
+
+    public StatusMessage StatusMessage
+    {
+        get => _statusMessage;
+        private set
+        {
+            _statusMessage = value;
+            _statusCancellationTokenSource?.Cancel();
+            _statusCancellationTokenSource?.Dispose();
+            _statusCancellationTokenSource = null;
+
+            if (value != null)
+            {
+                _statusCancellationTokenSource = new CancellationTokenSource();
+                _ = ClearStatusAfterDelay(_statusCancellationTokenSource.Token);
+            }
+        }
+    }
+
+    private async Task ClearStatusAfterDelay(CancellationToken token)
+    {
+        try
+        {
+            await Task.Delay(5000, token);
+            _statusMessage = null;
+        }
+        catch (TaskCanceledException)
+        {
+            // Ignore cancellation
+        }
+    }
 
     public void OnMessageReceived(IMessage message)
     {
