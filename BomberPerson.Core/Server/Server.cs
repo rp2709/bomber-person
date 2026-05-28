@@ -34,6 +34,7 @@ public class Server(int port, long address)
             {
                 client.GetStream().Write(new LobbyFull().Serialize());
                 client.Close();
+                continue;
             }
             playerCount++;
             Task.Run(new ClientHandler(client,messageBuffer).Handle);
@@ -44,9 +45,9 @@ public class Server(int port, long address)
 
     public CancellationTokenSource RunAsync()
     {
-        cts.Cancel();
+        cts?.Cancel();
         cts = new();
         Task.Run(Run);
         return cts;
-    } 
+    }
 }

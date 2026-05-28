@@ -1,5 +1,8 @@
 ﻿
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using BomberPerson.Core.Lobby;
+using BomberPerson.Core.Network;
 using BomberPerson.Core.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
@@ -23,6 +26,8 @@ public class HostGameScene : IScene
     private Button    btnBack;
 
     private string errorMessage = "";
+
+    private Task<bool> connectTask;
 
     public void LoadContent(ContentManager content, GraphicsDevice graphicsDevice, SceneManager sceneManager)
     {
@@ -79,6 +84,26 @@ public class HostGameScene : IScene
         fieldPassword.Update(gameTime, keyboard, mouse);
         btnCreate.Update(gameTime);
         btnBack.Update(gameTime);
+
+        // Connexion lancée par OnCreateClicked : on traite sa fin ICI, sur le thread
+        // principal, car le passage au lobby crée des textures GPU.
+        if (connectTask != null && connectTask.IsCompleted)
+        {
+            bool connected = connectTask.IsCompletedSuccessfully && connectTask.Result;
+            connectTask = null;
+
+            if (connected)
+            {
+                LobbyScene scene = (LobbyScene)SceneManager.LoadScene(EScene.LobbyMenu);
+                LobbyManager.Instance.SetLobby(scene, fieldGameName.Value);
+                LobbyManager.Instance.SetState(new List<NetworkPlayer> { new NetworkPlayer(0, "Host", true, false) });
+            }
+            else
+            {
+                errorMessage = "Impossible de démarrer le serveur.";
+                NetworkManager.Instance.Disconnect();
+            }
+        }
     }
 
     public void Draw(SpriteBatch spriteBatch)
@@ -108,8 +133,10 @@ public class HostGameScene : IScene
         SceneManager.LoadScene(EScene.MainMenu);
     }
 
-    private async void OnCreateClicked()
+    private void OnCreateClicked()
     {
+        if (connectTask != null) return; // connexion déjà en cours
+
         if (string.IsNullOrWhiteSpace(fieldGameName.Value))
         {
             errorMessage = "Le nom de la partie est requis.";
@@ -123,17 +150,10 @@ public class HostGameScene : IScene
         }
 
         errorMessage = "Démarrage du serveur...";
-        /*
+
+        // The host starts the server in-process, then connects to it over loopback as a normal
+        // client. The result is handled in Update (main thread); see the connectTask poll.
         NetworkManager.Instance.StartServer(port, fieldPassword.Value);
-        bool connected = await NetworkManager.Instance.ConnectAsync("127.0.0.1", port, "Host", fieldPassword.Value);
-        if (!connected)
-        {
-            errorMessage = "Impossible de démarrer le serveur.";
-            NetworkManager.Instance.Disconnect();
-            return;
-        }
-        */
-        LobbyScene scene = (LobbyScene)SceneManager.LoadScene(EScene.LobbyMenu);
-        LobbyManager.Instance.SetLobby(scene, fieldGameName.Value);
+        connectTask = NetworkManager.Instance.ConnectAsync("127.0.0.1", port, "Host", fieldPassword.Value);
     }
 }

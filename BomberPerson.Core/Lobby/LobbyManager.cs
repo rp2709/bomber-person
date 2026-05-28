@@ -27,6 +27,16 @@ public class LobbyManager
         ErrorMessage = "";
     }
 
+    public void SetLocalReady(bool ready)
+    {
+        for (int i = 0; i < Players.Count; i++)
+            if (Players[i].IsHost)
+            {
+                Players[i] = Players[i] with { IsReady = ready };
+                return;
+            }
+    }
+
     public void StartGame()
     {
         GameStarting = true;

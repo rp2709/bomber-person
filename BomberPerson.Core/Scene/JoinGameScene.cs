@@ -1,4 +1,6 @@
-﻿using BomberPerson.Core.Lobby;
+﻿using System.Threading.Tasks;
+using BomberPerson.Core.Lobby;
+using BomberPerson.Core.Network;
 using BomberPerson.Core.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
@@ -23,6 +25,9 @@ public class JoinGameScene : IScene
     private Button    btnBack;
 
     private string errorMessage = "";
+
+    private Task<bool> connectTask;
+    private int        pendingPort;
 
     public void LoadContent(ContentManager content, GraphicsDevice graphicsDevice, SceneManager manager)
     {
@@ -81,6 +86,23 @@ public class JoinGameScene : IScene
         fieldPassword.Update(gameTime, keyboard, mouse);
         btnJoin.Update(gameTime);
         btnBack.Update(gameTime);
+
+        // Fin de la connexion traitée sur le thread principal (le lobby crée des textures GPU).
+        if (connectTask != null && connectTask.IsCompleted)
+        {
+            bool connected = connectTask.IsCompletedSuccessfully && connectTask.Result;
+            connectTask = null;
+
+            if (connected)
+            {
+                LobbyScene scene = (LobbyScene)SceneManager.LoadScene(EScene.LobbyMenu);
+                LobbyManager.Instance.SetLobby(scene, $"{fieldIP.Value}:{pendingPort}");
+            }
+            else
+            {
+                errorMessage = "Impossible de se connecter au serveur.";
+            }
+        }
     }
 
     public void Draw(SpriteBatch spriteBatch)
@@ -106,8 +128,10 @@ public class JoinGameScene : IScene
         }
     }
 
-    private async void OnJoinClicked()
+    private void OnJoinClicked()
     {
+        if (connectTask != null) return; // connexion déjà en cours
+
         if (string.IsNullOrWhiteSpace(fieldPlayerName.Value))
         {
             errorMessage = "Le nom du joueur est requis.";
@@ -127,17 +151,10 @@ public class JoinGameScene : IScene
         }
 
         errorMessage = "Connexion en cours...";
-        /*
-        bool connected = await NetworkManager.Instance.ConnectAsync(fieldIP.Value, port, fieldPlayerName.Value, fieldPassword.Value);
-        if (!connected)
-        {
-            errorMessage = "Impossible de se connecter au serveur.";
-            return;
-        }
-        */
-        //SceneManager.LoadScene(new LobbyScene(fieldPlayerName.Value));
-        LobbyScene scene = (LobbyScene)SceneManager.LoadScene(EScene.LobbyMenu);
-        //LobbyManager.Instance.SetLobby(scene, fieldPlayerName.Value);
+
+        // Résultat traité dans Update (thread principal) ; voir le poll de connectTask.
+        pendingPort = port;
+        connectTask = NetworkManager.Instance.ConnectAsync(fieldIP.Value, port, fieldPlayerName.Value, fieldPassword.Value);
     }
     
     private void OnBackClicked() => SceneManager.LoadScene(EScene.MainMenu);

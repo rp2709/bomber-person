@@ -13,9 +13,11 @@ public class ClientHandler(TcpClient client,BufferBlock<IMessage> messageBuffer)
         while (client.Connected)
         {
             var message = NetworkMessageFactory.FromStream(client.GetStream());
+            if (message is null) break; // FromStream is still a stub; avoid a hot null loop
             if (message is LeaveGameMessage)
             {
                 client.Close();
+                break;
             }
             messageBuffer.Post(message);
         }

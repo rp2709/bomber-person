@@ -22,11 +22,20 @@ public class LobbyScene : IScene
 
     private bool localReady = false;
 
+    private Texture2D pastille;
+
     private readonly Color colorReady    = new Color(80,  200, 80);
     private readonly Color colorNotReady = new Color(200, 80,  80);
     private readonly Color colorHost     = new Color(220, 180, 0);
-    private readonly Color colorRowEven  = new Color(35,  35,  45);
-    private readonly Color colorRowOdd   = new Color(28,  28,  38);
+
+    // Couleur du carré par emplacement : bleu foncé, rouge, vert, jaune.
+    private static readonly Color[] SlotPalette =
+    {
+        new Color(30,  60,  150),
+        new Color(200, 50,  50),
+        new Color(60,  180, 70),
+        new Color(220, 200, 40),
+    };
 
     public LobbyScene()
     {
@@ -48,6 +57,8 @@ public class LobbyScene : IScene
 
         pixel = new Texture2D(graphicsDevice, 1, 1);
         pixel.SetData(new[] { Color.White });
+
+        pastille = CreateCircleTexture(graphicsDevice, 64);
 
         int screenW = graphicsDevice.Viewport.Width;
         int screenH = graphicsDevice.Viewport.Height;
@@ -139,43 +150,95 @@ public class LobbyScene : IScene
 
     private void DrawPlayerList(SpriteBatch spriteBatch, Viewport viewport, int startY)
     {
-        int listW   = 600;
-        int rowH    = 54;
-        int listX   = (viewport.Width - listW) / 2;
-        int padding = 16;
-        
+        int slots  = SlotPalette.Length;
+        int frameW = 180;
+        int frameH = 220;
+        int gap    = 24;
+        int totalW = slots * frameW + (slots - 1) * gap;
+        int startX = (viewport.Width - totalW) / 2;
+
         List<NetworkPlayer> players = LobbyManager.Instance.Players;
 
-        for (int i = 0; i < players.Count; i++)
+        for (int slot = 0; slot < slots; slot++)
         {
-            NetworkPlayer player  = players[i];
-            Rectangle     rowRect = new Rectangle(listX, startY + i * (rowH + 4), listW, rowH);
+            Rectangle     frame  = new Rectangle(startX + slot * (frameW + gap), startY, frameW, frameH);
+            NetworkPlayer player = FindBySlot(players, slot);
 
-            Color rowColor = i % 2 == 0 ? colorRowEven : colorRowOdd;
-            spriteBatch.Draw(pixel, rowRect, rowColor);
+            DrawFrame(spriteBatch, frame, player != null);
 
-            Color sideColor = player.IsReady ? colorReady : colorNotReady;
-            spriteBatch.Draw(pixel, new Rectangle(rowRect.X, rowRect.Y, 4, rowRect.Height), sideColor);
+            if (player == null)
+            {
+                DrawCenteredText(spriteBatch, "En attente...", frame, new Color(110, 110, 120));
+                continue;
+            }
 
-            Vector2 namePos = new Vector2(rowRect.X + padding + 8, rowRect.Y + (rowH - fontUI.LineSpacing) / 2f);
+            // Carré de la couleur du joueur (déterminée par l'emplacement).
+            int       square    = 110;
+            Rectangle colorRect = new Rectangle(frame.X + (frameW - square) / 2, frame.Y + 26, square, square);
+            spriteBatch.Draw(pixel, colorRect, SlotPalette[slot]);
+
+            // Pastille prêt / pas prêt, coin haut droit du cadre.
+            int       dot     = 28;
+            Rectangle dotRect = new Rectangle(frame.Right - dot - 12, frame.Y + 12, dot, dot);
+            spriteBatch.Draw(pastille, dotRect, player.IsReady ? colorReady : colorNotReady);
+
+            Vector2 nameSize = fontUI.MeasureString(player.Name);
+            Vector2 namePos  = new Vector2(frame.X + (frameW - nameSize.X) / 2f, colorRect.Bottom + 16);
             spriteBatch.DrawString(fontUI, player.Name, namePos, Color.White);
 
             if (player.IsHost)
             {
-                Vector2 hostPos = new Vector2(
-                    rowRect.X + padding + 8 + fontUI.MeasureString(player.Name).X + 12,
-                    namePos.Y
-                );
+                Vector2 hostSize = fontUI.MeasureString("HOST");
+                Vector2 hostPos  = new Vector2(frame.X + (frameW - hostSize.X) / 2f, namePos.Y + nameSize.Y + 6);
                 spriteBatch.DrawString(fontUI, "HOST", hostPos, colorHost);
             }
-
-            string  statusText  = player.IsReady ? "Prêt" : "Pas prêt";
-            Color   statusColor = player.IsReady ? colorReady : colorNotReady;
-            Vector2 statusSize  = fontUI.MeasureString(statusText);
-            Vector2 statusPos   = new Vector2(rowRect.Right - statusSize.X - padding, namePos.Y);
-            spriteBatch.DrawString(fontUI, statusText, statusPos, statusColor);
         }
-        
+    }
+
+    private static NetworkPlayer FindBySlot(List<NetworkPlayer> players, int slot)
+    {
+        foreach (NetworkPlayer p in players)
+            if (p.Id == slot) return p;
+        return null;
+    }
+
+    private void DrawFrame(SpriteBatch spriteBatch, Rectangle frame, bool occupied)
+    {
+        Color bg     = occupied ? new Color(42, 42, 56) : new Color(26, 26, 34);
+        Color border = occupied ? new Color(95, 95, 130) : new Color(55, 55, 70);
+        int   t      = 2;
+
+        spriteBatch.Draw(pixel, frame, bg);
+        spriteBatch.Draw(pixel, new Rectangle(frame.X, frame.Y, frame.Width, t), border);
+        spriteBatch.Draw(pixel, new Rectangle(frame.X, frame.Bottom - t, frame.Width, t), border);
+        spriteBatch.Draw(pixel, new Rectangle(frame.X, frame.Y, t, frame.Height), border);
+        spriteBatch.Draw(pixel, new Rectangle(frame.Right - t, frame.Y, t, frame.Height), border);
+    }
+
+    private void DrawCenteredText(SpriteBatch spriteBatch, string text, Rectangle frame, Color color)
+    {
+        Vector2 size = fontUI.MeasureString(text);
+        Vector2 pos  = new Vector2(frame.X + (frame.Width - size.X) / 2f, frame.Y + (frame.Height - size.Y) / 2f);
+        spriteBatch.DrawString(fontUI, text, pos, color);
+    }
+
+    private static Texture2D CreateCircleTexture(GraphicsDevice device, int diameter)
+    {
+        Texture2D texture  = new Texture2D(device, diameter, diameter);
+        Color[]   data     = new Color[diameter * diameter];
+        float     radius   = diameter / 2f;
+        float     radiusSq = radius * radius;
+
+        for (int y = 0; y < diameter; y++)
+        for (int x = 0; x < diameter; x++)
+        {
+            float dx = x - radius + 0.5f;
+            float dy = y - radius + 0.5f;
+            data[y * diameter + x] = dx * dx + dy * dy <= radiusSq ? Color.White : Color.Transparent;
+        }
+
+        texture.SetData(data);
+        return texture;
     }
 
     // -------------------------
@@ -188,6 +251,8 @@ public class LobbyScene : IScene
         localReady = !localReady;
         btnReady.SetLabel(localReady ? "Pas prêt" : "Prêt");
 
+        // Placeholder local tant que l'aller-retour serveur n'est pas branché.
+        LobbyManager.Instance.SetLocalReady(localReady);
         //NetworkManager.Instance.SendToServer( localReady ? new PlayerReadyRequestTask() : new PlayerNotReadyRequestTask() );
     }
 
