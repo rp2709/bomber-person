@@ -15,7 +15,7 @@ public static class NetworkMessageFactory
         return type switch
         {
             MessageType.LobbyFull => new LobbyFull(),
-            MessageType.NewState => new NewStateMessage(null), // TODO: Deserialize state
+            MessageType.NewState => new NewStateMessage(State.Decode(stream)),
             MessageType.LeaveGame => new LeaveGameMessage(),
             _ => throw new InvalidDataException($"Unknown message type: {typeByte}")
         };

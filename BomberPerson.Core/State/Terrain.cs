@@ -47,15 +47,16 @@ public class Terrain
         return ms.ToArray();
     }
 
-    public void Decode(Stream data)
+    public static Terrain Decode(Stream data)
     {
         using var reader = new BinaryReader(data, System.Text.Encoding.Default, true);
-        Width = reader.ReadUInt32();
-        Height = reader.ReadUInt32();
-        grid = new Type[Width * Height];
-        for (int i = 0; i < Width * Height; ++i)
+        var width = reader.ReadUInt32();
+        var height = reader.ReadUInt32();
+        var terrain = new Terrain(width, height);
+        for (int i = 0; i < width * height; ++i)
         {
-            grid[i] = (Type)reader.ReadByte();
+            terrain.grid[i] = (Type)reader.ReadByte();
         }
+        return terrain;
     }
 }

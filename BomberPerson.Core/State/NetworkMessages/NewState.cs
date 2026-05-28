@@ -10,8 +10,8 @@ public class NewStateMessage(State state) : NetworkMessage
     {
         List<byte> buffer = new();
         buffer.AddRange(base.Serialize());
-        
-        // serialize state
+
+        buffer.AddRange(state.Encode());
         
         return buffer.ToArray();
     }
