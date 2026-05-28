@@ -43,11 +43,9 @@ public class ClientHandler(
         {
             while (client.Connected)
             {
-                IMessage message = NetworkMessageFactory.FromStream(stream);
-                if (message is null) break;                 // peer disconnected
-                if (message is LeaveGameMessage) break;
-                if (message is SetReadyMessage ready)
-                    messageBuffer.Post(new PlayerReadyMessage(slot, ready.Ready));
+                IMessage message = NetworkMessageFactory.FromStream(stream,slot);
+                if (message is null or LeaveGameMessage) break;                 // peer disconnected or leaving
+                messageBuffer.Post(message);
             }
         }
         catch { /* socket reset or malformed frame */ }

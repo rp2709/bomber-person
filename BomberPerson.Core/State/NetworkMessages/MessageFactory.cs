@@ -5,14 +5,14 @@ namespace BomberPerson.Core.State.NetworkMessages;
 
 public static class NetworkMessageFactory
 {
-    public static IMessage FromStream(Stream stream)
+    public static IMessage FromStream(Stream stream, int slotId = 0)
     {
         int typeByte = stream.ReadByte();
         if (typeByte == -1) return null;
 
         MessageType type = (MessageType)typeByte;
 
-        return type switch
+        NetworkMessage message = type switch
         {
             MessageType.LobbyFull => new LobbyFull(),
             MessageType.NewState => new NewStateMessage(State.Decode(stream)),
@@ -23,5 +23,8 @@ public static class NetworkMessageFactory
             MessageType.SetReady => new SetReadyMessage(stream.ReadByte() == 1),
             _ => throw new InvalidDataException($"Unknown message type: {typeByte}")
         };
+
+        message.SlotId = slotId;
+        return message;
     }
 }

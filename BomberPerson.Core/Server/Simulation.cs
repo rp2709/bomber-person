@@ -33,8 +33,8 @@ public class Simulation(State.State state)
                 Remove(left.Slot);
                 break;
 
-            case PlayerReadyMessage ready:
-                Find(ready.Slot)?.SetReady(ready.Ready);
+            case SetReadyMessage ready:
+                Find(ready.SlotId)?.SetReady(ready.Ready);
                 break;
 
             default:
