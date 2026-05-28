@@ -17,6 +17,9 @@ public static class NetworkMessageFactory
             MessageType.LobbyFull => new LobbyFull(),
             MessageType.NewState => new NewStateMessage(State.Decode(stream)),
             MessageType.LeaveGame => new LeaveGameMessage(),
+            MessageType.Move => new MoveMessage((MoveMessage.MoveDirection)stream.ReadByte()),
+            MessageType.Stop => new StopMessage(),
+            MessageType.PutBomb => new PutBombMessage(new BinaryReader(stream).ReadUInt32(), new BinaryReader(stream).ReadUInt32()),
             _ => throw new InvalidDataException($"Unknown message type: {typeByte}")
         };
     }
