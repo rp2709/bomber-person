@@ -8,7 +8,7 @@ public class Terrain
     enum Type{None,Empty,Box,Solid,Border}
 
     private int width,height; // max 2^4 = 16
-    private Type[] grid;
+    private Type[] grid = [];
     
     /**
      * Encodes the grid as a simple stream of cell types encoded as a single byte
@@ -16,7 +16,7 @@ public class Terrain
      */
     public byte[] Encode()
     {
-        var buffer = new byte[width * height + 1];
+        byte[] buffer = new byte[width * height + 1];
         buffer[0] = (byte)((width << 4 | height & 0xF) & 0xFF);
         for (int i = 0; i < width * height; ++i)
         {
@@ -30,9 +30,9 @@ public class Terrain
         int header =  data.ReadByte();
         if (header < 0) throw new DataException("Expecting valid encoded terrain");
         byte bHeader = (byte)header;
-        var height =  (byte)(bHeader & 0x0F);
-        var width = (byte)(bHeader >> 4);
-        var buffer = new byte[width * height];
+        byte height =  (byte)(bHeader & 0x0F);
+        byte width = (byte)(bHeader >> 4);
+        byte[] buffer = new byte[width * height];
         data.ReadExactly(buffer);
     }
 }
