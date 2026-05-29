@@ -51,4 +51,14 @@ public class Player(int number, string name, Color color) : IReadOnlyPlayer
         };
         return player;
     }
+
+    public Player Clone()
+    {
+        return new Player(Number, Name, Color)
+        {
+            Position = Position,
+            Velocity = Velocity,
+            Ready = Ready
+        };
+    }
 }

@@ -59,4 +59,11 @@ public class Terrain
         }
         return terrain;
     }
+
+    public Terrain Clone()
+    {
+        var clone = new Terrain(Width, Height);
+        System.Array.Copy(grid, clone.grid, grid.Length);
+        return clone;
+    }
 }

@@ -28,4 +28,13 @@ public class Bomb(DateTime explosionDate)
             PositionY = y
         };
     }
+
+    public Bomb Clone()
+    {
+        return new Bomb(ExplosionDate)
+        {
+            PositionX = PositionX,
+            PositionY = PositionY
+        };
+    }
 }

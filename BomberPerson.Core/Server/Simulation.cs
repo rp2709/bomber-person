@@ -26,6 +26,9 @@ public class Simulation(State.State state)
     public IMessage[] ProcessMessage(IMessage message)
     {
         List<IMessage> messages = new();
+        
+        Interpolate(state, DateTimeOffset.Now);
+        
         switch (message)
         {
             case NewPlayerMessage joined:
@@ -62,8 +65,8 @@ public class Simulation(State.State state)
                 }
                 break;
         }
-
-        messages.Add(new NewStateMessage(state));
+        
+        messages.Add(new NewStateMessage(state.Clone())); // send copy of state
         
         return messages.ToArray();
     }
@@ -79,5 +82,16 @@ public class Simulation(State.State state)
     {
         for (int i = 0; i < state.Players.Count; i++)
             if (state.Players[i].Number == slot) { state.Players.RemoveAt(i); return; }
+    }
+
+    public static void Interpolate(State.State state, DateTimeOffset atTime)
+    {
+        var deltaTime = atTime - state.Timestamp;
+        state.Timestamp = atTime;
+
+        if (state.CurrentPhase == State.State.Phase.Lobby)
+        {
+            return;
+        }
     }
 }
