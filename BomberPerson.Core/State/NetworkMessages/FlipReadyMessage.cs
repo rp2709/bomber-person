@@ -10,7 +10,7 @@ namespace BomberPerson.Core.State.NetworkMessages;
 /// </summary>
 public class FlipReadyMessage : NetworkMessage, ISimulationMessage
 {
-    private static int countDownStart = 10;
+    private static int countDownStart = 3;
     public override MessageType Type { get; } = MessageType.FlipReady;
     public void Process(State state)
     {

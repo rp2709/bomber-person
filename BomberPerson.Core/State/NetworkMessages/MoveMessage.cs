@@ -9,8 +9,8 @@ namespace BomberPerson.Core.State.NetworkMessages;
 public class MoveMessage(MoveMessage.MoveDirection direction) : NetworkMessage, ISimulationMessage
 {
     private readonly Vector2[] directionVectors = [
-        new Vector2(0,1),
         new Vector2(0,-1),
+        new Vector2(0,1),
         new Vector2(-1,0),
         new Vector2(1,0)
     ];
@@ -36,7 +36,7 @@ public class MoveMessage(MoveMessage.MoveDirection direction) : NetworkMessage, 
 
     public void Process(State state)
     {
-        const float speed = 1.5f;
+        const float speed = 50f;
         state.GetPlayer(SlotId).Velocity = directionVectors[(int)Direction] * speed;
     }
 }

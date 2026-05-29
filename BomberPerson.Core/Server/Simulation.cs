@@ -50,6 +50,11 @@ public class Simulation(State.State state)
         {
             return;
         }
+
+        foreach (var player in state.Players)
+        {
+            player.Position += player.Velocity *  (float)deltaTime.TotalSeconds;
+        }
     }
 
     public static FeedBackMessage NextEvent(State.IReadOnlyState state)

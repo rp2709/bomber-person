@@ -12,6 +12,7 @@ public class ClientStateController
 {
     private State.State _state = new();
     public IReadOnlyState State => _state;
+    public int? MySlotId { get; private set; }
 
     private Server.Server localServerInstance;
     private NetworkClient networkClient = null;
@@ -59,8 +60,29 @@ public class ClientStateController
 
     public void OnMessageReceived(IMessage message)
     {
+        if (message is NetworkMessage networkMessage)
+        {
+            MySlotId = networkMessage.SlotId;
+        }
+
         if (message is NewStateMessage newState)
         {
+            if (_state.CurrentPhase != newState.State.CurrentPhase)
+            {
+                switch (newState.State.CurrentPhase)
+                {
+                    case Core.State.State.Phase.Lobby : 
+                        GoToLobby();
+                        break;
+                    case Core.State.State.Phase.Game: 
+                        GoToGame();
+                        break;
+                    case Core.State.State.Phase.EndGame:
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+            }
             _state = newState.State;
         }
         else if (message is LobbyFull)
@@ -117,7 +139,7 @@ public class ClientStateController
         {
             StatusMessage = new StatusMessage("Connected", StatusMessage.ImportanceLevels.Success);
             networkClient.Send(new JoinRequestMessage(playerName));
-            sceneManager.LoadScene(new LobbyScene(this));
+            GoToLobby();
         }
         else
         {
@@ -128,6 +150,26 @@ public class ClientStateController
     public void SetReady()
     {
         networkClient?.Send(new FlipReadyMessage());
+    }
+
+    public void Move(MoveMessage.MoveDirection direction)
+    {
+        networkClient?.Send(new MoveMessage(direction));
+    }
+
+    public void PutBomb(uint x, uint y)
+    {
+        networkClient?.Send(new PutBombMessage(x, y));
+    }
+
+    private void GoToLobby()
+    {
+        sceneManager.LoadScene(new LobbyScene(this));
+    }
+
+    private void GoToGame()
+    {
+        sceneManager.LoadScene(new GameScene(this));
     }
 
     public void QuitLobby()
