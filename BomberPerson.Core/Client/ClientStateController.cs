@@ -157,9 +157,9 @@ public class ClientStateController
         networkClient?.Send(new MoveMessage(direction));
     }
 
-    public void PutBomb(uint x, uint y)
+    public void PutBomb()
     {
-        networkClient?.Send(new PutBombMessage(x, y));
+        networkClient?.Send(new PutBombMessage());
     }
 
     private void GoToLobby()

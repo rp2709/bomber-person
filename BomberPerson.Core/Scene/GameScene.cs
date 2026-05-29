@@ -82,15 +82,7 @@ public class GameScene(ClientStateController clientStateController) : Scene(clie
 
         if (ks.IsKeyDown(Keys.X))
         {
-            if (ClientStateController.MySlotId.HasValue)
-            {
-                var players = (List<Player>)ClientStateController.State.Players;
-                var p = players.Find(player => player.Number == ClientStateController.MySlotId.Value);
-                if (p != null)
-                {
-                    ClientStateController.PutBomb((uint)(p.Position.X / TileSize), (uint)(p.Position.Y / TileSize));
-                }
-            }
+            ClientStateController.PutBomb();
         }
     }
 
