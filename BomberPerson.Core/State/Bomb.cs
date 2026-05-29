@@ -8,12 +8,14 @@ public class Bomb(DateTimeOffset explosionDate)
     public uint PositionX { get; set; }
     public uint PositionY { get; set; }
 
+    public int BlastRadius { get; set; } = 1;
     public DateTimeOffset ExplosionDate { get; private set; } = explosionDate;
 
     public void Encode(BinaryWriter writer)
     {
         writer.Write(PositionX);
         writer.Write(PositionY);
+        writer.Write(BlastRadius);
         writer.Write(ExplosionDate.ToUnixTimeMilliseconds());
     }
 
@@ -21,11 +23,13 @@ public class Bomb(DateTimeOffset explosionDate)
     {
         var x = reader.ReadUInt32();
         var y = reader.ReadUInt32();
+        var radius = reader.ReadInt32();
         var date = DateTimeOffset.FromUnixTimeMilliseconds(reader.ReadInt64());
         return new Bomb(date)
         {
             PositionX = x,
-            PositionY = y
+            PositionY = y,
+            BlastRadius = radius
         };
     }
 
@@ -34,7 +38,8 @@ public class Bomb(DateTimeOffset explosionDate)
         return new Bomb(ExplosionDate)
         {
             PositionX = PositionX,
-            PositionY = PositionY
+            PositionY = PositionY,
+            BlastRadius = BlastRadius
         };
     }
 }

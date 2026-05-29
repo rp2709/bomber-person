@@ -129,9 +129,17 @@ public class GameScene(ClientStateController clientStateController) : Scene(clie
             spriteBatch.Draw(circle, new Rectangle((int)bomb.PositionX * TileSize, (int)bomb.PositionY * TileSize + HeaderHeight, TileSize, TileSize), Color.Red);
         }
 
+        // Draw Explosions
+        foreach (var explosion in state.Explosions)
+        {
+            spriteBatch.Draw(pixel, new Rectangle((int)explosion.PositionX * TileSize, (int)explosion.PositionY * TileSize + HeaderHeight, TileSize, TileSize), Color.Orange);
+        }
+
         // Draw Players
         foreach (var player in state.Players)
         {
+            if (!player.IsAlive)
+                continue;
             // player.Position is Vector2, probably in world coordinates
             Color pColor = new Color(player.Color.R, player.Color.G, player.Color.B);
             spriteBatch.Draw(circle, new Rectangle((int)player.Position.X, (int)player.Position.Y + HeaderHeight, TileSize, TileSize), pColor);

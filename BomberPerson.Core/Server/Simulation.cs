@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using BomberPerson.Core.Messages;
 using BomberPerson.Core.State.NetworkMessages;
 
@@ -57,13 +58,61 @@ public class Simulation(State.State state)
         }
     }
 
-    public static FeedBackMessage NextEvent(State.IReadOnlyState state)
+    public static FeedBackMessage NextEvent(State.State state)
     {
-        if (state.CurrentPhase == State.State.Phase.Lobby && state.CountDownValue >= 0)
+        if (state.CurrentPhase == State.State.Phase.Game)
         {
-            return new CountDownProgressMessage(DateTimeOffset.Now + TimeSpan.FromSeconds(1));
+            foreach (var player in state.Players)
+            {
+                if (!player.IsAlive) continue;
+
+                int tileX = (int)(player.Position.X / 32);
+                int tileY = (int)(player.Position.Y / 32);
+
+                foreach (var explosion in state.Explosions)
+                {
+                    if (tileX == explosion.PositionX && tileY == explosion.PositionY)
+                    {
+                        player.IsAlive = false;
+                        break;
+                    }
+                }
+            }
         }
 
-        return null;
+        FeedBackMessage bestEvent = null;
+        DateTimeOffset bestDate = DateTimeOffset.MaxValue;
+
+        if (state.CurrentPhase == State.State.Phase.Game)
+        {
+            foreach (var bomb in state.Bombs)
+            {
+                if (bomb.ExplosionDate < bestDate)
+                {
+                    bestDate = bomb.ExplosionDate;
+                    bestEvent = new BombExplosionStart(bomb.PositionX, bomb.PositionY, bomb.ExplosionDate);
+                }
+            }
+
+            foreach (var explosion in state.Explosions)
+            {
+                if (explosion.EndDate < bestDate)
+                {
+                    bestDate = explosion.EndDate;
+                    bestEvent = new BombExplosionEnd(explosion.EndDate);
+                }
+            }
+        }
+
+        if (state.CurrentPhase == State.State.Phase.Lobby && state.CountDownValue >= 0)
+        {
+            var countdownDate = DateTimeOffset.Now + TimeSpan.FromSeconds(1);
+            if (countdownDate < bestDate)
+            {
+                bestEvent = new CountDownProgressMessage(countdownDate);
+            }
+        }
+
+        return bestEvent;
     }
 }

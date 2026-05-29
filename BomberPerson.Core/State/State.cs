@@ -10,6 +10,7 @@ public interface IReadOnlyState
     State.Phase CurrentPhase { get; }
     IReadOnlyList<IReadOnlyPlayer> Players { get; }
     IReadOnlyList<Bomb> Bombs { get; }
+    IReadOnlyList<Explosion> Explosions { get; }
     Terrain Terrain { get; }
     int CountDownValue { get; }
     DateTimeOffset Timestamp { get; }
@@ -36,6 +37,8 @@ public class State : IReadOnlyState
     IReadOnlyList<IReadOnlyPlayer> IReadOnlyState.Players => Players;
     public List<Bomb> Bombs { get; } = new();
     IReadOnlyList<Bomb> IReadOnlyState.Bombs => Bombs;
+    public List<Explosion> Explosions { get; } = new();
+    IReadOnlyList<Explosion> IReadOnlyState.Explosions => Explosions;
     public Terrain Terrain { get; set; }= new();
     public int CountDownValue { get; set; } = -1;
     public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.Now;
@@ -57,6 +60,12 @@ public class State : IReadOnlyState
         foreach (var bomb in Bombs)
         {
             bomb.Encode(writer);
+        }
+
+        writer.Write(Explosions.Count);
+        foreach (var explosion in Explosions)
+        {
+            explosion.Encode(writer);
         }
 
         var terrainData = Terrain.Encode();
@@ -88,6 +97,13 @@ public class State : IReadOnlyState
             state.Bombs.Add(Bomb.Decode(reader));
         }
 
+        int explosionCount = reader.ReadInt32();
+        state.Explosions.Clear();
+        for (int i = 0; i < explosionCount; i++)
+        {
+            state.Explosions.Add(Explosion.Decode(reader));
+        }
+
         int terrainDataLength = reader.ReadInt32();
         byte[] terrainData = reader.ReadBytes(terrainDataLength);
         using var terrainMs = new MemoryStream(terrainData);
@@ -112,6 +128,10 @@ public class State : IReadOnlyState
         foreach (var bomb in Bombs)
         {
             clone.Bombs.Add(bomb.Clone());
+        }
+        foreach (var explosion in Explosions)
+        {
+            clone.Explosions.Add(explosion.Clone());
         }
         return clone;
     }

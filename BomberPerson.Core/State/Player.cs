@@ -13,6 +13,7 @@ public interface IReadOnlyPlayer
     Vector2 Position { get; }
     Vector2 Velocity { get; }
     bool Ready { get; }
+    bool IsAlive { get; }
 }
 
 public class Player(int number, string name, Color color) : IReadOnlyPlayer
@@ -24,6 +25,7 @@ public class Player(int number, string name, Color color) : IReadOnlyPlayer
     public Vector2 Position { get; set; }= Vector2.Zero;
     public Vector2 Velocity { get; set; }= Vector2.Zero;
     public bool Ready { get; private set; } = false;
+    public bool IsAlive { get; set; } = true;
     public void FlipReady(){Ready = !Ready;}
     public void SetReady(bool ready){Ready = ready;}
     public void Encode(BinaryWriter writer)
@@ -36,6 +38,7 @@ public class Player(int number, string name, Color color) : IReadOnlyPlayer
         writer.Write(Velocity.X);
         writer.Write(Velocity.Y);
         writer.Write(Ready);
+        writer.Write(IsAlive);
     }
 
     public static Player Decode(BinaryReader reader)
@@ -47,7 +50,8 @@ public class Player(int number, string name, Color color) : IReadOnlyPlayer
         {
             Position = new Vector2(reader.ReadSingle(), reader.ReadSingle()),
             Velocity = new Vector2(reader.ReadSingle(), reader.ReadSingle()),
-            Ready = reader.ReadBoolean()
+            Ready = reader.ReadBoolean(),
+            IsAlive = reader.ReadBoolean()
         };
         return player;
     }
@@ -58,7 +62,8 @@ public class Player(int number, string name, Color color) : IReadOnlyPlayer
         {
             Position = Position,
             Velocity = Velocity,
-            Ready = Ready
+            Ready = Ready,
+            IsAlive = IsAlive
         };
     }
 }
