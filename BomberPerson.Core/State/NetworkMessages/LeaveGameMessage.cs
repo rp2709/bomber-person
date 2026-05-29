@@ -7,7 +7,7 @@ public class LeaveGameMessage : NetworkMessage, ISimulationMessage
 {
     public override MessageType Type => MessageType.LeaveGame;
 
-    public IMessage Process(State state)
+    public void Process(State state)
     {
         for (int i = 0; i < state.Players.Count; i++)
         {
@@ -17,6 +17,5 @@ public class LeaveGameMessage : NetworkMessage, ISimulationMessage
                 break;
             }
         }
-        return null;
     }
 }

@@ -7,7 +7,7 @@ public class PlayerLeftMessage(int slot) : IMessage, ISimulationMessage
 {
     public int Slot { get; } = slot;
 
-    public IMessage Process(State.State state)
+    public void Process(State.State state)
     {
         for (int i = 0; i < state.Players.Count; i++)
         {
@@ -17,6 +17,5 @@ public class PlayerLeftMessage(int slot) : IMessage, ISimulationMessage
                 break;
             }
         }
-        return null;
     }
 }

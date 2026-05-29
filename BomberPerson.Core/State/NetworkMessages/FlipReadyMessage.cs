@@ -12,16 +12,16 @@ public class FlipReadyMessage : NetworkMessage, ISimulationMessage
 {
     private static int countDownStart = 10;
     public override MessageType Type { get; } = MessageType.FlipReady;
-    public IMessage Process(State state)
+    public void Process(State state)
     {
         state.GetPlayer(SlotId)?.FlipReady();
         if (state.Players.TrueForAll(player => player.Ready))
         {
             state.CountDownValue = countDownStart;
-            return new CountDownProgressMessage(DateTimeOffset.Now + TimeSpan.FromSeconds(1));
         }
-
-        state.CountDownValue = -1;
-        return null;
+        else
+        {
+            state.CountDownValue = -1;
+        }
     }
 }

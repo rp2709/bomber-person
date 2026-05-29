@@ -4,7 +4,7 @@ using BomberPerson.Core.Server;
 
 namespace BomberPerson.Core.State.NetworkMessages;
 
-public class JoinRequestMessage(string playerName) : NetworkMessage, ISimulationMessage
+public class JoinRequestMessage(string playerName) : NetworkMessage
 {
     public string PlayerName { get; } = playerName;
 
@@ -17,11 +17,5 @@ public class JoinRequestMessage(string playerName) : NetworkMessage, ISimulation
         writer.Write((byte)Type);
         writer.Write(PlayerName);
         return ms.ToArray();
-    }
-
-    public IMessage Process(State state)
-    {
-        // Handled by ClientHandler, but implementation here for completeness if needed in Simulation
-        return null;
     }
 }

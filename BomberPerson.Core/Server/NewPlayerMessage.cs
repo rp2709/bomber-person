@@ -17,10 +17,9 @@ public class NewPlayerMessage(int slot, string name) : IMessage, ISimulationMess
     public int Slot { get; } = slot;
     public string Name { get; } = name;
 
-    public IMessage Process(State.State state)
+    public void Process(State.State state)
     {
         if (state.GetPlayer(Slot) == null)
             state.Players.Add(new State.Player(Slot, Name, Palette[Slot % Palette.Length]));
-        return null;
     }
 }

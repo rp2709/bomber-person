@@ -10,19 +10,16 @@ public class CountDownProgressMessage(DateTimeOffset dateTimeOffset) : FeedBackM
         return dateTimeOffset;
     }
 
-    public override IMessage Process(State.State state)
+    public override void Process(State.State state)
     {
-        IMessage msg = null;
         if (state.CountDownValue > 0)
         {
             state.CountDownValue--;
-            msg = new CountDownProgressMessage(DateTimeOffset.Now + TimeSpan.FromSeconds(1));
         } 
         if (state.CountDownValue == 0)
         {
             state.CountDownValue = -1;
             state.CurrentPhase = State.State.Phase.Game;
         }
-        return msg;
     }
 }

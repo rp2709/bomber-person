@@ -12,5 +12,5 @@ public abstract class FeedBackMessage : IMessage, ISimulationMessage
         return ((FeedBackMessage)msg).GetRealisationDate();
     }
 
-    public abstract IMessage Process(State.State state);
+    public abstract void Process(State.State state);
 }

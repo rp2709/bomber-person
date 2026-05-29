@@ -4,5 +4,5 @@ namespace BomberPerson.Core.Server;
 
 public interface ISimulationMessage
 {
-    IMessage Process(State.State state);
+    void Process(State.State state);
 }

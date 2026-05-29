@@ -10,8 +10,7 @@ namespace BomberPerson.Core.Server;
 /// <summary>
 /// A dataflow block that receives messages associated with a realisation date.
 /// It keeps the message until the realisation date and only then forwards it to the next block.
-/// If a new message arrives, it replaces the one it's currently holding only if the
-/// realisation date of the new message is before the current one.
+/// If a new message arrives, it replaces the one it's currently holding
 /// </summary>
 /// <typeparam name="T">The type of messages handled by the block.</typeparam>
 public class RealisationDateBlock<T> : IPropagatorBlock<T, T>
@@ -30,7 +29,8 @@ public class RealisationDateBlock<T> : IPropagatorBlock<T, T>
         _dateSelector = dateSelector ?? throw new ArgumentNullException(nameof(dateSelector));
     }
 
-    public DataflowMessageStatus OfferMessage(DataflowMessageHeader messageHeader, T messageValue, ISourceBlock<T>? source, bool consumeToAccept)
+    public DataflowMessageStatus OfferMessage(DataflowMessageHeader messageHeader, T messageValue,
+        ISourceBlock<T>? source, bool consumeToAccept)
     {
         if (messageValue == null) return DataflowMessageStatus.Declined;
 
@@ -40,30 +40,23 @@ public class RealisationDateBlock<T> : IPropagatorBlock<T, T>
 
             DateTimeOffset messageDate = _dateSelector(messageValue);
 
-            if (_heldMessage == null || messageDate < _heldDate)
-            {
-                if (consumeToAccept)
-                {
-                    if (source == null) return DataflowMessageStatus.NotAvailable;
-                    bool consumed;
-                    var consumedValue = source.ConsumeMessage(messageHeader, this, out consumed);
-                    if (!consumed) return DataflowMessageStatus.NotAvailable;
-                    messageValue = consumedValue!;
-                }
 
-                _heldMessage = messageValue;
-                _heldDate = messageDate;
-                _cts?.Cancel();
-                _cts = new CancellationTokenSource();
-                
-                _ = ScheduleForward(messageValue, messageDate, _cts.Token);
-                return DataflowMessageStatus.Accepted;
+            if (consumeToAccept)
+            {
+                if (source == null) return DataflowMessageStatus.NotAvailable;
+                bool consumed;
+                var consumedValue = source.ConsumeMessage(messageHeader, this, out consumed);
+                if (!consumed) return DataflowMessageStatus.NotAvailable;
+                messageValue = consumedValue!;
             }
 
-            // The requirement says: "it will replace the one it's currently holding ONLY IF
-            // the realisation date of the new message is before the current one."
-            // Thus, we accept but discard messages with a later or equal realisation date.
-            return DataflowMessageStatus.Accepted; 
+            _heldMessage = messageValue;
+            _heldDate = messageDate;
+            _cts?.Cancel();
+            _cts = new CancellationTokenSource();
+
+            _ = ScheduleForward(messageValue, messageDate, _cts.Token);
+            return DataflowMessageStatus.Accepted;
         }
     }
 

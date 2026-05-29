@@ -28,9 +28,11 @@ public class Simulation(State.State state)
         
         Interpolate(state, DateTimeOffset.Now);
         
-        var result = simulationMessage.Process(state);
+        simulationMessage.Process(state);
+        
         var newStateMessage = new NewStateMessage(state.Clone());
         
+        var result = NextEvent(state);
         if (result != null)
         {
             return [newStateMessage,result];    
@@ -48,5 +50,15 @@ public class Simulation(State.State state)
         {
             return;
         }
+    }
+
+    public static FeedBackMessage NextEvent(State.IReadOnlyState state)
+    {
+        if (state.CurrentPhase == State.State.Phase.Lobby && state.CountDownValue >= 0)
+        {
+            return new CountDownProgressMessage(DateTimeOffset.Now + TimeSpan.FromSeconds(1));
+        }
+
+        return null;
     }
 }
