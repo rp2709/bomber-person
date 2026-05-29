@@ -25,6 +25,11 @@ public class State : IReadOnlyState
         EndGame,
     }
 
+    public Player GetPlayer(int playerId)
+    {
+        return Players.Find(player => player.Number == playerId);
+    }
+
     public Phase CurrentPhase { get; set; } =  Phase.Lobby;
 
     public List<Player> Players { get; }= new();

@@ -21,67 +21,22 @@ public class Simulation(State.State state)
         Color.FromArgb(220, 200, 40),
     };
 
-    private static int countDownStart = 10;
-
     public IMessage[] ProcessMessage(IMessage message)
     {
-        List<IMessage> messages = new();
+        if (message is not ISimulationMessage simulationMessage)
+            return [];
         
         Interpolate(state, DateTimeOffset.Now);
         
-        switch (message)
+        var result = simulationMessage.Process(state);
+        var newStateMessage = new NewStateMessage(state.Clone());
+        
+        if (result != null)
         {
-            case NewPlayerMessage joined:
-                if (Find(joined.Slot) == null)
-                    state.Players.Add(new State.Player(joined.Slot, joined.Name, Palette[joined.Slot % Palette.Length]));
-                break;
-
-            case PlayerLeftMessage left:
-                Remove(left.Slot);
-                break;
-
-            case FlipReadyMessage ready:
-                Find(ready.SlotId)?.FlipReady();
-                if (state.Players.TrueForAll(player => player.Ready))
-                {
-                    state.CountDownValue = countDownStart;
-                    messages.Add(new CountDownProgressMessage(DateTimeOffset.Now + TimeSpan.FromSeconds(1)));
-                }
-                else
-                {
-                    state.CountDownValue = -1;
-                }
-                break;
-            
-            case CountDownProgressMessage progress:
-                if (state.CountDownValue > 0)
-                {
-                    state.CountDownValue--;
-                    messages.Add(new CountDownProgressMessage(DateTimeOffset.Now + TimeSpan.FromSeconds(1)));
-                } else if (state.CountDownValue == 0)
-                {
-                    state.CountDownValue = -1;
-                    state.CurrentPhase = State.State.Phase.Game;
-                }
-                break;
+            return [newStateMessage,result];    
         }
         
-        messages.Add(new NewStateMessage(state.Clone())); // send copy of state
-        
-        return messages.ToArray();
-    }
-
-    private State.Player Find(int slot)
-    {
-        foreach (State.Player p in state.Players)
-            if (p.Number == slot) return p;
-        return null;
-    }
-
-    private void Remove(int slot)
-    {
-        for (int i = 0; i < state.Players.Count; i++)
-            if (state.Players[i].Number == slot) { state.Players.RemoveAt(i); return; }
+        return [newStateMessage];
     }
 
     public static void Interpolate(State.State state, DateTimeOffset atTime)

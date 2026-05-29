@@ -3,7 +3,7 @@ using BomberPerson.Core.Messages;
 
 namespace BomberPerson.Core.Server;
 
-public abstract class FeedBackMessage : IMessage
+public abstract class FeedBackMessage : IMessage, ISimulationMessage
 {
     protected abstract DateTimeOffset GetRealisationDate();
 
@@ -11,4 +11,6 @@ public abstract class FeedBackMessage : IMessage
     {
         return ((FeedBackMessage)msg).GetRealisationDate();
     }
+
+    public abstract IMessage Process(State.State state);
 }
