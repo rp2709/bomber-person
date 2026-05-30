@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using MonoGame.Extended.Input;
 
 namespace BomberPerson.Core.Scene;
 
@@ -20,6 +21,14 @@ public class GameScene(ClientStateController clientStateController) : Scene(clie
 
     private const int HeaderHeight = 50;
     private const int TileSize = 32;
+
+    private static readonly (Keys[] Bindings, MoveMessage.MoveDirection Direction)[] MoveBindings =
+    {
+        (new[] { Keys.Up,    Keys.W }, MoveMessage.MoveDirection.Up),
+        (new[] { Keys.Down,  Keys.S }, MoveMessage.MoveDirection.Down),
+        (new[] { Keys.Left,  Keys.A }, MoveMessage.MoveDirection.Left),
+        (new[] { Keys.Right, Keys.D }, MoveMessage.MoveDirection.Right),
+    };
 
     public override void LoadContent(ContentManager content, GraphicsDevice graphicsDevice)
     {
@@ -74,13 +83,28 @@ public class GameScene(ClientStateController clientStateController) : Scene(clie
     {
         quitButton?.Update(gameTime);
 
-        KeyboardState ks = Keyboard.GetState();
-        if (ks.IsKeyDown(Keys.Up)) ClientStateController.Move(MoveMessage.MoveDirection.Up);
-        if (ks.IsKeyDown(Keys.Down)) ClientStateController.Move(MoveMessage.MoveDirection.Down);
-        if (ks.IsKeyDown(Keys.Left)) ClientStateController.Move(MoveMessage.MoveDirection.Left);
-        if (ks.IsKeyDown(Keys.Right)) ClientStateController.Move(MoveMessage.MoveDirection.Right);
+        KeyboardStateExtended ks = KeyboardExtended.GetState();
 
-        if (ks.IsKeyDown(Keys.X))
+        bool anyMoveKeyDown = false;
+        bool anyMoveKeyReleased = false;
+
+        foreach (var (bindings, direction) in MoveBindings)
+        {
+            foreach (var key in bindings)
+            {
+                if (ks.WasKeyPressed(key))
+                    ClientStateController.Move(direction);
+                if (ks.IsKeyDown(key))
+                    anyMoveKeyDown = true;
+                if (ks.WasKeyReleased(key))
+                    anyMoveKeyReleased = true;
+            }
+        }
+
+        if (anyMoveKeyReleased && !anyMoveKeyDown)
+            ClientStateController.Stop();
+
+        if (ks.IsKeyDown(Keys.X) || ks.IsKeyDown(Keys.Space))
         {
             ClientStateController.PutBomb();
         }

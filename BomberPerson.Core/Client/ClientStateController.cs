@@ -157,6 +157,11 @@ public class ClientStateController
         networkClient?.Send(new MoveMessage(direction));
     }
 
+    public void Stop()
+    {
+        networkClient?.Send(new StopMessage());
+    }
+
     public void PutBomb()
     {
         networkClient?.Send(new PutBombMessage());
