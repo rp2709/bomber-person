@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using BomberPerson.Core.Messages;
 using BomberPerson.Core.State;
 using BomberPerson.Core.State.NetworkMessages;
@@ -25,10 +26,10 @@ public class Simulation(State.State state)
     };
 
     private static readonly TimeSpan GameDuration = TimeSpan.FromMinutes(2);
-    private static readonly TimeSpan CollisionSimulationStep = TimeSpan.FromMilliseconds(200);
-    private const uint CellSize = 32;
-    private const uint PlayerRadius = CellSize / 2u;
-    private const uint BombRadius = PlayerRadius;
+    private static readonly TimeSpan CollisionSimulationStep = TimeSpan.FromMilliseconds(50);
+    public const uint CellSize = 32;
+    public const uint PlayerRadius = 10;
+    public const uint BombRadius = PlayerRadius;
     public IMessage[] ProcessMessage(IMessage message)
     {
         if (message is not ISimulationMessage simulationMessage)
@@ -161,26 +162,70 @@ public class Simulation(State.State state)
 
     private static bool IsColliding(Vector2 position, IReadOnlyState state)
     {
-        // Player is a point in this simulation (or we can use radius if needed, 
-        // but PutBomb uses player.Position.X / 32, suggesting point-based cell check)
-        uint x = (uint)(position.X / CellSize);
-        uint y = (uint)(position.Y / CellSize);
+        Vector2 playerCenter = position + new Vector2(PlayerRadius, PlayerRadius);
+        uint centerCellX = (uint)playerCenter.X / CellSize;
+        uint centerCellY = (uint)playerCenter.Y / CellSize;
+        
+        // check cells around the position
+        for (uint i = centerCellX - 1; i <= centerCellX + 1; i++)
+        {
+            if(i >= state.Terrain.Width)continue;
+            for (uint j = centerCellY - 1; j <= centerCellY + 1; j++)
+            {
+                if(j >= state.Terrain.Height)continue;
+                if (state.Terrain[i,j] is Terrain.Type.Border or Terrain.Type.Solid or Terrain.Type.Box)
+                {
+                    Rectangle cell = new Rectangle(
+                        (int)(i * CellSize),
+                        (int)(j * CellSize),
+                        (int)CellSize,
+                        (int)CellSize);
+                    
+                    if(Intersects(cell,playerCenter,PlayerRadius))
+                        return true;
+                }
+            }
+        }
+        
+        
+        // check for all bombs
+        var squaredSummedRadius = (PlayerRadius + BombRadius) * (PlayerRadius + BombRadius);
+        foreach (var bomb in state.Bombs)
+        {
+            Vector2 bombCenter = new Vector2(bomb.PositionX * CellSize + BombRadius, bomb.PositionY * CellSize + BombRadius);
 
-        if (x >= state.Terrain.Width || y >= state.Terrain.Height) return true;
-
-        var tile = state.Terrain[x, y];
-        if (tile is Terrain.Type.Box or Terrain.Type.Solid or Terrain.Type.Border) return true;
-
-        if (state.Bombs.Any(b => b.PositionX == x && b.PositionY == y)) return true;
+            if ((bombCenter - playerCenter).LengthSquared() <= squaredSummedRadius)
+                return true;
+        }
 
         return false;
     }
 
     private static bool IsOverExplosion(Vector2 position, IReadOnlyState state)
     {
-        uint x = (uint)(position.X / CellSize);
-        uint y = (uint)(position.Y / CellSize);
+        Vector2 playerCenter = position + new Vector2(PlayerRadius, PlayerRadius);
+        foreach (var explosion in state.Explosions)
+        {
+            Rectangle rect = new Rectangle(
+                (int)(explosion.PositionX * CellSize),
+                (int)(explosion.PositionY * CellSize),
+                (int)CellSize,(int)CellSize);
+            
+            if(Intersects(rect,playerCenter,PlayerRadius))
+                return true;
+        }
 
-        return state.Explosions.Any(e => e.PositionX == x && e.PositionY == y);
+        return false;
+    }
+
+    private static bool Intersects(Rectangle rectangle, Vector2 center, float radius)
+    {
+        float closestX = Math.Clamp(center.X, rectangle.Left, rectangle.Right);
+        float closestY = Math.Clamp(center.Y, rectangle.Top, rectangle.Bottom);
+
+        float dx = center.X - closestX;
+        float dy = center.Y - closestY;
+
+        return dx * dx + dy * dy <= radius * radius;
     }
 }
