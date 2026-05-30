@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace BomberPerson.Core.State;
 
@@ -13,7 +12,11 @@ public interface IReadOnlyState
     IReadOnlyList<Explosion> Explosions { get; }
     Terrain Terrain { get; }
     int CountDownValue { get; }
-    DateTimeOffset Timestamp { get; }
+    DateTimeOffset CurrentDate { get; }
+    
+    DateTimeOffset GameStartDate { get;}
+    
+    State Clone();
 }
 
 public class State : IReadOnlyState
@@ -41,13 +44,15 @@ public class State : IReadOnlyState
     IReadOnlyList<Explosion> IReadOnlyState.Explosions => Explosions;
     public Terrain Terrain { get; set; }= new();
     public int CountDownValue { get; set; } = -1;
-    public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.Now;
+    public DateTimeOffset CurrentDate { get; set; } = DateTimeOffset.Now;
+    public DateTimeOffset GameStartDate { get; set; } = DateTimeOffset.Now;
 
     public byte[] Encode()
     {
         using var ms = new MemoryStream();
         using var writer = new BinaryWriter(ms);
-        writer.Write(Timestamp.ToUnixTimeMilliseconds());
+        writer.Write(CurrentDate.ToUnixTimeMilliseconds());
+        writer.Write(GameStartDate.ToUnixTimeMilliseconds());
         writer.Write((int)CurrentPhase);
         
         writer.Write(Players.Count);
@@ -80,7 +85,8 @@ public class State : IReadOnlyState
     {
         var state = new State();
         using var reader = new BinaryReader(stream, System.Text.Encoding.Default, true);
-        state.Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(reader.ReadInt64());
+        state.CurrentDate = DateTimeOffset.FromUnixTimeMilliseconds(reader.ReadInt64());
+        state.GameStartDate = DateTimeOffset.FromUnixTimeMilliseconds(reader.ReadInt64());
         state.CurrentPhase = (Phase)reader.ReadInt32();
 
         int playerCount = reader.ReadInt32();
@@ -119,7 +125,8 @@ public class State : IReadOnlyState
             CurrentPhase = CurrentPhase,
             Terrain = Terrain.Clone(),
             CountDownValue = CountDownValue,
-            Timestamp = Timestamp
+            CurrentDate = CurrentDate,
+            GameStartDate = GameStartDate,
         };
         foreach (var player in Players)
         {

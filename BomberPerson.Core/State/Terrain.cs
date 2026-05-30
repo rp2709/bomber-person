@@ -19,7 +19,7 @@ public class Terrain
         Height = 16;
         grid = new Type[Width * Height];
     }
-    public enum Type{None,Empty,Box,Solid,Border}
+    public enum Type{Empty,Box,Solid,Border}
 
     public uint Width { get; private set; }
     public uint Height{get; private set; }
