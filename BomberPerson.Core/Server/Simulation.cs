@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Numerics;
 using BomberPerson.Core.Messages;
+using BomberPerson.Core.State;
 using BomberPerson.Core.State.NetworkMessages;
 
 namespace BomberPerson.Core.Server;
@@ -22,6 +24,11 @@ public class Simulation(State.State state)
         Color.FromArgb(220, 200, 40),
     };
 
+    private static readonly TimeSpan GameDuration = TimeSpan.FromMinutes(2);
+    private static readonly TimeSpan CollisionSimulationStep = TimeSpan.FromMilliseconds(200);
+    private const uint CellSize = 32;
+    private const uint PlayerRadius = CellSize / 2u;
+    private const uint BombRadius = PlayerRadius;
     public IMessage[] ProcessMessage(IMessage message)
     {
         if (message is not ISimulationMessage simulationMessage)
@@ -44,8 +51,9 @@ public class Simulation(State.State state)
 
     public static void Interpolate(State.State state, DateTimeOffset atTime)
     {
-        var deltaTime = atTime - state.Timestamp;
-        state.Timestamp = atTime;
+        if (state.CurrentDate == atTime) return;
+        var deltaTime = atTime - state.CurrentDate;
+        state.CurrentDate = atTime;
 
         if (state.CurrentPhase == State.State.Phase.Lobby)
         {
@@ -58,61 +66,121 @@ public class Simulation(State.State state)
         }
     }
 
-    public static FeedBackMessage NextEvent(State.State state)
+    private static FeedBackMessage NextEvent(IReadOnlyState state)
     {
-        if (state.CurrentPhase == State.State.Phase.Game)
-        {
-            foreach (var player in state.Players)
-            {
-                if (!player.IsAlive) continue;
-
-                int tileX = (int)(player.Position.X / 32);
-                int tileY = (int)(player.Position.Y / 32);
-
-                foreach (var explosion in state.Explosions)
-                {
-                    if (tileX == explosion.PositionX && tileY == explosion.PositionY)
-                    {
-                        player.IsAlive = false;
-                        break;
-                    }
-                }
-            }
-        }
-
-        FeedBackMessage bestEvent = null;
-        DateTimeOffset bestDate = DateTimeOffset.MaxValue;
-
-        if (state.CurrentPhase == State.State.Phase.Game)
-        {
-            foreach (var bomb in state.Bombs)
-            {
-                if (bomb.ExplosionDate < bestDate)
-                {
-                    bestDate = bomb.ExplosionDate;
-                    bestEvent = new BombExplosionStart(bomb.PositionX, bomb.PositionY, bomb.ExplosionDate);
-                }
-            }
-
-            foreach (var explosion in state.Explosions)
-            {
-                if (explosion.EndDate < bestDate)
-                {
-                    bestDate = explosion.EndDate;
-                    bestEvent = new BombExplosionEnd(explosion.EndDate);
-                }
-            }
-        }
-
+        List<FeedBackMessage> comingEvents = [];
         if (state.CurrentPhase == State.State.Phase.Lobby && state.CountDownValue >= 0)
         {
-            var countdownDate = DateTimeOffset.Now + TimeSpan.FromSeconds(1);
-            if (countdownDate < bestDate)
+            return new CountDownProgressMessage(DateTimeOffset.Now + TimeSpan.FromSeconds(1));
+        }
+        
+        if (state.CurrentPhase == State.State.Phase.Game)
+        {
+            comingEvents.Add(new EndOfGameMessage(state.GameStartDate + GameDuration));
+            comingEvents.AddRange(
+                state.Bombs.Select(bomb => new BombExplosionStart(bomb.PositionX, bomb.PositionY, bomb.ExplosionDate))
+                );
+
+            comingEvents.AddRange(
+                state.Explosions.Select(explosion => new BombExplosionEnd(explosion.EndDate))
+                );
+        }
+        
+        var first = comingEvents.MinBy(FeedBackMessage.GetRealisationDate);
+
+
+        if (state.CurrentPhase != State.State.Phase.Game) return first;
+        
+        var playerEvent = _nextPlayerCollision(state, FeedBackMessage.GetRealisationDate(first));
+        return playerEvent ?? first;
+    }
+
+    private static FeedBackMessage _nextPlayerCollision(IReadOnlyState state, DateTimeOffset until)
+    {
+        var interpolationState = state.Clone();
+        var staticPlayers = new bool[state.Players.Count];
+        var initiallyColliding = new bool[state.Players.Count];
+
+        // Initial check for 'bad state'
+        for (int i = 0; i < state.Players.Count; i++)
+        {
+            var player = state.Players[i];
+            if (!player.IsAlive)
             {
-                bestEvent = new CountDownProgressMessage(countdownDate);
+                staticPlayers[i] = true;
+                continue;
+            }
+            if (IsColliding(player.Position, state))
+            {
+                initiallyColliding[i] = true;
             }
         }
 
-        return bestEvent;
+        for (DateTimeOffset step = state.CurrentDate; step < until; step += CollisionSimulationStep)
+        {
+            Interpolate(interpolationState, step);
+
+            for (int i = 0; i < state.Players.Count; i++)
+            {
+                if (staticPlayers[i]) continue;
+                var player = interpolationState.Players[i];
+                
+                if (player.Velocity == Vector2.Zero)
+                {
+                    staticPlayers[i] = true;
+                }
+
+                // check for death by explosion
+                if (IsOverExplosion(player.Position, interpolationState))
+                {
+                    return new PlayerDeathMessage(player.Number, step);
+                }
+
+                // check for collision with blocking terrain elements (box, solid & border) or bomb
+                bool colliding = IsColliding(player.Position, interpolationState);
+                if (colliding)
+                {
+                    if (!initiallyColliding[i])
+                    {
+                        // stop player at previous step to avoid collision
+                        return new PlayerCollisionMessage(player.Number, step - CollisionSimulationStep);
+                    }
+                }
+                else
+                {
+                    // If not colliding anymore, clear the initiallyColliding flag
+                    initiallyColliding[i] = false;
+                }
+            }
+
+            if (staticPlayers.All(b => b)) break;
+        }
+
+        return null;
+    }
+
+    private static bool IsColliding(Vector2 position, IReadOnlyState state)
+    {
+        // Player is a point in this simulation (or we can use radius if needed, 
+        // but PutBomb uses player.Position.X / 32, suggesting point-based cell check)
+        uint x = (uint)(position.X / CellSize);
+        uint y = (uint)(position.Y / CellSize);
+
+        if (x >= state.Terrain.Width || y >= state.Terrain.Height) return true;
+
+        var tile = state.Terrain[x, y];
+        if (tile is Terrain.Type.Box or Terrain.Type.Solid or Terrain.Type.Border) return true;
+
+        if (state.Bombs.Any(b => b.PositionX == x && b.PositionY == y)) return true;
+
+        return false;
+    }
+
+    private static bool IsOverExplosion(Vector2 position, IReadOnlyState state)
+    {
+        uint x = (uint)(position.X / CellSize);
+        uint y = (uint)(position.Y / CellSize);
+
+        return state.Explosions.Any(e => e.PositionX == x && e.PositionY == y);
     }
 }
