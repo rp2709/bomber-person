@@ -15,11 +15,20 @@ public class CountDownProgressMessage(DateTimeOffset dateTimeOffset) : FeedBackM
         if (state.CountDownValue > 0)
         {
             state.CountDownValue--;
-        } 
+        }
         if (state.CountDownValue == 0)
         {
             state.CountDownValue = -1;
             state.CurrentPhase = State.State.Phase.Game;
+
+            var starts = state.Terrain.PlayerStarts;
+            foreach (var player in state.Players)
+            {
+                if (player.Number >= 0 && player.Number < starts.Count)
+                {
+                    player.Position = starts[player.Number];
+                }
+            }
         }
     }
 }
