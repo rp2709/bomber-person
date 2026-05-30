@@ -42,7 +42,7 @@ public class State : IReadOnlyState
     IReadOnlyList<Bomb> IReadOnlyState.Bombs => Bombs;
     public List<Explosion> Explosions { get; } = new();
     IReadOnlyList<Explosion> IReadOnlyState.Explosions => Explosions;
-    public Terrain Terrain { get; set; }= new();
+    public Terrain Terrain { get; set; } = Terrain.Generate();
     public int CountDownValue { get; set; } = -1;
     public DateTimeOffset CurrentDate { get; set; } = DateTimeOffset.Now;
     public DateTimeOffset GameStartDate { get; set; } = DateTimeOffset.Now;
