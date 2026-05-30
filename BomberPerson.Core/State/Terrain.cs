@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
+using BomberPerson.Core.Server;
 
 namespace BomberPerson.Core.State;
 
@@ -101,7 +102,7 @@ public class Terrain
         for (int i = 0; i < corners.Length && i < terrain.playerStarts.Length; i++)
         {
             var (cx, cy) = corners[i];
-            terrain.playerStarts[i] = new Vector2(cx * TileSize, cy * TileSize);
+            terrain.playerStarts[i] = new Vector2(cx * TileSize + (TileSize - Simulation.PlayerRadius * 2), cy * TileSize + (TileSize - Simulation.PlayerRadius * 2));
         }
 
         return terrain;

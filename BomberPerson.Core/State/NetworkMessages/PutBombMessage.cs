@@ -16,6 +16,12 @@ public class PutBombMessage() : NetworkMessage, ISimulationMessage
         var player = state.GetPlayer(SlotId);
         if (player == null) return;
 
+        if (player.LastBombPlaced + TimeSpan.FromSeconds(Player.BombPlaceDelayS) > DateTimeOffset.Now)
+        {
+            return;
+        }
+        player.LastBombPlaced  = DateTimeOffset.Now;
+        
         uint x = (uint)(player.Position.X / 32);
         uint y = (uint)(player.Position.Y / 32);
 

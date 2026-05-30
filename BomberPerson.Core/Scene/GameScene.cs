@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using BomberPerson.Core.Client;
+using BomberPerson.Core.Server;
 using BomberPerson.Core.State;
 using BomberPerson.Core.State.NetworkMessages;
 using BomberPerson.Core.UI;
@@ -166,7 +167,7 @@ public class GameScene(ClientStateController clientStateController) : Scene(clie
                 continue;
             // player.Position is Vector2, probably in world coordinates
             Color pColor = new Color(player.Color.R, player.Color.G, player.Color.B);
-            spriteBatch.Draw(circle, new Rectangle((int)player.Position.X, (int)player.Position.Y + HeaderHeight, TileSize, TileSize), pColor);
+            spriteBatch.Draw(circle, new Rectangle((int)player.Position.X, (int)player.Position.Y + HeaderHeight, (int)Simulation.PlayerRadius*2,(int)Simulation.PlayerRadius*2), pColor);
             
             // Draw name
             Vector2 nameSize = font.MeasureString(player.Name);

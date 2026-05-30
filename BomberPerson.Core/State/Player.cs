@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System;
 using System.Drawing;
 using System.IO;
 using System.Numerics;
@@ -14,10 +14,13 @@ public interface IReadOnlyPlayer
     Vector2 Velocity { get; }
     bool Ready { get; }
     bool IsAlive { get; }
+    
+    DateTimeOffset LastBombPlaced { get; }
 }
 
 public class Player(int number, string name, Color color) : IReadOnlyPlayer
 {
+    public const uint BombPlaceDelayS = 3;
     public int Number { get; private set; } = number;
     public string Name { get; private set; } = name;
     public Color Color { get; private set; } = color;
@@ -26,8 +29,8 @@ public class Player(int number, string name, Color color) : IReadOnlyPlayer
     public Vector2 Velocity { get; set; }= Vector2.Zero;
     public bool Ready { get; private set; } = false;
     public bool IsAlive { get; set; } = true;
+    public DateTimeOffset LastBombPlaced { get; set; }
     public void FlipReady(){Ready = !Ready;}
-    public void SetReady(bool ready){Ready = ready;}
     public void Encode(BinaryWriter writer)
     {
         writer.Write(Number);
@@ -39,6 +42,7 @@ public class Player(int number, string name, Color color) : IReadOnlyPlayer
         writer.Write(Velocity.Y);
         writer.Write(Ready);
         writer.Write(IsAlive);
+        writer.Write(LastBombPlaced.ToUnixTimeSeconds());
     }
 
     public static Player Decode(BinaryReader reader)
@@ -53,6 +57,7 @@ public class Player(int number, string name, Color color) : IReadOnlyPlayer
             Ready = reader.ReadBoolean(),
             IsAlive = reader.ReadBoolean()
         };
+        player.LastBombPlaced =  DateTimeOffset.FromUnixTimeSeconds(reader.ReadInt64());
         return player;
     }
 
@@ -63,7 +68,8 @@ public class Player(int number, string name, Color color) : IReadOnlyPlayer
             Position = Position,
             Velocity = Velocity,
             Ready = Ready,
-            IsAlive = IsAlive
+            IsAlive = IsAlive,
+            LastBombPlaced = LastBombPlaced
         };
     }
 }
