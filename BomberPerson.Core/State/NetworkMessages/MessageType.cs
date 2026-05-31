@@ -11,4 +11,5 @@ public enum MessageType : byte
     FlipReady,
     JoinRequest,
     ServerStopping,
+    Replay,
 }

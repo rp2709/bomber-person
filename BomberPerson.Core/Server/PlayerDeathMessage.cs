@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using BomberPerson.Core.Messages;
 
 namespace BomberPerson.Core.Server;
@@ -17,6 +18,15 @@ public class PlayerDeathMessage(int playerSlot, DateTimeOffset realisationDate) 
         {
             player.IsAlive = false;
             player.Velocity = System.Numerics.Vector2.Zero;
+        }
+
+        if (state.CurrentPhase != State.State.Phase.Game) return;
+
+        var alive = state.Players.Where(p => p.IsAlive).ToList();
+        if (alive.Count <= 1)
+        {
+            state.CurrentPhase = State.State.Phase.EndGame;
+            state.WinnerSlotId = alive.Count == 1 ? alive[0].Number : -1;
         }
     }
 }

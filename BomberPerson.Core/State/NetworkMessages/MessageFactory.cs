@@ -27,6 +27,7 @@ public static class NetworkMessageFactory
             MessageType.FlipReady => new FlipReadyMessage(),
             MessageType.JoinRequest => new JoinRequestMessage(new BinaryReader(stream).ReadString()),
             MessageType.ServerStopping => new ServerStoppingMessage(),
+            MessageType.Replay => new ReplayMessage(),
             _ => throw new InvalidDataException($"Unknown message type: {typeByte}")
         };
 
@@ -52,6 +53,7 @@ public static class NetworkMessageFactory
             MessageType.FlipReady => new FlipReadyMessage(),
             MessageType.JoinRequest => new JoinRequestMessage(new BinaryReader(stream).ReadString()),
             MessageType.ServerStopping => new ServerStoppingMessage(),
+            MessageType.Replay => new ReplayMessage(),
             _ => throw new InvalidDataException($"Unknown message type: {typeByte}")
         };
 

@@ -67,23 +67,25 @@ public class ClientStateController
 
         if (message is NewStateMessage newState)
         {
-            if (_state.CurrentPhase != newState.State.CurrentPhase)
+            var phaseChanged = _state.CurrentPhase != newState.State.CurrentPhase;
+            _state = newState.State;
+            if (phaseChanged)
             {
                 switch (newState.State.CurrentPhase)
                 {
-                    case Core.State.State.Phase.Lobby : 
+                    case Core.State.State.Phase.Lobby :
                         GoToLobby();
                         break;
-                    case Core.State.State.Phase.Game: 
+                    case Core.State.State.Phase.Game:
                         GoToGame();
                         break;
                     case Core.State.State.Phase.EndGame:
+                        GoToEndGame();
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
             }
-            _state = newState.State;
         }
         else if (message is LobbyFull)
         {
@@ -167,6 +169,11 @@ public class ClientStateController
         networkClient?.Send(new PutBombMessage());
     }
 
+    public void Replay()
+    {
+        networkClient?.Send(new ReplayMessage());
+    }
+
     private void GoToLobby()
     {
         sceneManager.LoadScene(new LobbyScene(this));
@@ -175,6 +182,11 @@ public class ClientStateController
     private void GoToGame()
     {
         sceneManager.LoadScene(new GameScene(this));
+    }
+
+    private void GoToEndGame()
+    {
+        sceneManager.LoadScene(new EndGameScene(this));
     }
 
     public void QuitLobby()
