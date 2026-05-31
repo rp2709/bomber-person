@@ -7,7 +7,7 @@ namespace BomberPerson.Core.State.NetworkMessages;
 
 public class PutBombMessage() : NetworkMessage, ISimulationMessage
 {
-    private static readonly TimeSpan BombDelay = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan BombDelay = TimeSpan.FromSeconds(3);
 
     public override MessageType Type => MessageType.PutBomb;
 
