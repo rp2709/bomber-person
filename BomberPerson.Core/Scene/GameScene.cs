@@ -95,12 +95,21 @@ public class GameScene(ClientStateController clientStateController) : Scene(clie
         // Draw Header
         spriteBatch.Draw(pixel, new Rectangle(0, 0, viewport.Width, HeaderHeight), Color.DarkGray);
         quitButton?.Draw(spriteBatch, pixel);
-
+        
         if (ClientStateController.State == null) return;
         
         // Use interpolation for smoother movement
         var state = ((State.State)ClientStateController.State).Clone();
-        BomberPerson.Core.Server.Simulation.Interpolate(state, DateTimeOffset.Now);
+        Simulation.Interpolate(state, DateTimeOffset.Now);
+        
+        // time remaining
+        TimeSpan timeSinceGameStart = state.CurrentDate - state.GameStartDate;
+        String timerText = $"Time : {timeSinceGameStart.Minutes}:{timeSinceGameStart.Seconds}";
+        Vector2 textPos  = new (
+            (viewport.Width - font.MeasureString(timerText).X) / 2f,
+            HeaderHeight - font.LineSpacing
+        );
+        spriteBatch.DrawString(font, timerText, textPos, Color.Black);
 
         // Draw Terrain
         Terrain terrain = state.Terrain;

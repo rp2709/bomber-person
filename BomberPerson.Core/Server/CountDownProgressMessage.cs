@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using BomberPerson.Core.Messages;
 
 namespace BomberPerson.Core.Server;
@@ -20,14 +21,12 @@ public class CountDownProgressMessage(DateTimeOffset dateTimeOffset) : FeedBackM
         {
             state.CountDownValue = -1;
             state.CurrentPhase = State.State.Phase.Game;
+            state.GameStartDate = DateTimeOffset.Now;
 
             var starts = state.Terrain.PlayerStarts;
-            foreach (var player in state.Players)
+            foreach (var player in state.Players.Where(player => player.Number >= 0 && player.Number < starts.Count))
             {
-                if (player.Number >= 0 && player.Number < starts.Count)
-                {
-                    player.Position = starts[player.Number];
-                }
+                player.Position = starts[player.Number];
             }
         }
     }
