@@ -95,7 +95,6 @@ public class ClientStateController
         else if (message is ServerStoppingMessage)
         {
             StatusMessage = new StatusMessage("Server is stopping", StatusMessage.ImportanceLevels.Info);
-            _state = new();
             QuitLobby();
         }
     }
