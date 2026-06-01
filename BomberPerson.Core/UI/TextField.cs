@@ -176,6 +176,7 @@ public class TextField
             Keys.D9 or Keys.NumPad9 => '9',
             Keys.Space              => ' ',
             Keys.OemMinus           => shift ? '_' : '-',
+            Keys.OemComma           => '.',
             _                       => null
         };
     }
