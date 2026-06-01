@@ -10,6 +10,7 @@ public static class Settings
     public const int BombExplosionDelayMilliseconds = 2500;
     public const int BombExplosionDurationMilliseconds = 1500;
     public const uint BombPlaceDelayS = 3;
+    public const int CountDownStart = 3;
     
     public const uint TerrainDefaultWidth = 20;
     public const uint TerrainDefaultHeight = 20;
