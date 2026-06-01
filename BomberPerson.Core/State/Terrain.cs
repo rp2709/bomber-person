@@ -2,16 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
-using BomberPerson.Core.Server;
 
 namespace BomberPerson.Core.State;
 
 public class Terrain
 {
-    public const int TileSize = 32;
-    public const uint DefaultWidth = 21;
-    public const uint DefaultHeight = 15;
-
     public Terrain(uint width, uint height)
     {
         if (width < 5 || height < 5)
@@ -22,7 +17,7 @@ public class Terrain
         playerStarts = new Vector2[State.MaxPlayers];
     }
 
-    public Terrain() : this(DefaultWidth, DefaultHeight) { }
+    public Terrain() : this(Settings.TerrainDefaultWidth, Settings.TerrainDefaultHeight) { }
 
     public enum Type{None,Empty,Box,Solid,Border}
 
@@ -48,7 +43,7 @@ public class Terrain
     /// boxes, three safe tiles around each corner spawn, and random gaps dug through the
     /// boxes so the map is traversable from the start.
     /// </summary>
-    public static Terrain Generate(uint width = DefaultWidth, uint height = DefaultHeight, int? seed = null)
+    public static Terrain Generate(uint width = Settings.TerrainDefaultWidth, uint height = Settings.TerrainDefaultHeight, int? seed = null)
     {
         var terrain = new Terrain(width, height);
         var rng = seed.HasValue ? new Random(seed.Value) : new Random();
@@ -102,7 +97,7 @@ public class Terrain
         for (int i = 0; i < corners.Length && i < terrain.playerStarts.Length; i++)
         {
             var (cx, cy) = corners[i];
-            terrain.playerStarts[i] = new Vector2(cx * TileSize + (TileSize - Simulation.PlayerRadius * 2), cy * TileSize + (TileSize - Simulation.PlayerRadius * 2));
+            terrain.playerStarts[i] = new Vector2(cx * Settings.TileSize + (Settings.TileSize - Settings.PlayerRadius * 2), cy * Settings.TileSize + (Settings.TileSize - Settings.PlayerRadius * 2));
         }
 
         return terrain;

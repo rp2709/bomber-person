@@ -5,7 +5,7 @@ namespace BomberPerson.Core.Server;
 
 public class BombExplosionStart(uint positionX, uint positionY, DateTimeOffset realisationDate) : FeedBackMessage, ISimulationMessage
 {
-    private static readonly TimeSpan ExplosionDuration = TimeSpan.FromSeconds(1);
+    private static readonly TimeSpan ExplosionDuration = TimeSpan.FromMilliseconds(Settings.BombExplosionDurationMilliseconds);
 
     public uint PositionX { get; } = positionX;
     public uint PositionY { get; } = positionY;

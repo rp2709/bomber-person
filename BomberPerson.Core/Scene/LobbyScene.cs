@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using BomberPerson.Core.Client;
+﻿using BomberPerson.Core.Client;
 using BomberPerson.Core.State;
 using BomberPerson.Core.UI;
 using Microsoft.Xna.Framework;
@@ -13,37 +12,27 @@ public class LobbyScene(ClientStateController controller) : Scene(controller)
     private string gameName = "Bomber Person";
 
     private SpriteFont fontTitle;
-    private SpriteFont fontUI;
-    private Texture2D  pixel;
+    private SpriteFont fontUi;
+    private Texture2D pixel;
 
     private Button btnReady;
-    private Button btnStart;
     private Button btnQuit;
-
-    private bool localReady = false;
 
     private Texture2D pastille;
 
-    private readonly Color colorReady    = new Color(80,  200, 80);
-    private readonly Color colorNotReady = new Color(200, 80,  80);
-    private readonly Color colorHost     = new Color(220, 180, 0);
+    private readonly Color colorReady = new Color(80, 200, 80);
+    private readonly Color colorNotReady = new Color(200, 80, 80);
+    private readonly Color colorHost = new Color(220, 180, 0);
 
-    // Couleur du carré par emplacement : bleu foncé, rouge, vert, jaune.
-    private static readonly Color[] SlotPalette =
-    {
-        new Color(30,  60,  150),
-        new Color(200, 50,  50),
-        new Color(60,  180, 70),
-        new Color(220, 200, 40),
-    };
+    private string ErrorMessage =>
+        ClientStateController.StatusMessage?.Importance == StatusMessage.ImportanceLevels.Error
+            ? ClientStateController.StatusMessage.Message
+            : null;
 
-    private string errorMessage => ClientStateController.StatusMessage?.Importance == StatusMessage.ImportanceLevels.Error 
-        ? ClientStateController.StatusMessage.Message 
-        : null;
-
-    private string infoMessage => ClientStateController.StatusMessage?.Importance != StatusMessage.ImportanceLevels.Error 
-        ? ClientStateController.StatusMessage?.Message 
-        : null;
+    private string InfoMessage =>
+        ClientStateController.StatusMessage?.Importance != StatusMessage.ImportanceLevels.Error
+            ? ClientStateController.StatusMessage?.Message
+            : null;
 
     public void SetName(string name)
     {
@@ -53,24 +42,24 @@ public class LobbyScene(ClientStateController controller) : Scene(controller)
     public override void LoadContent(ContentManager content, GraphicsDevice graphicsDevice)
     {
         fontTitle = content.Load<SpriteFont>("Fonts/TitleFont");
-        fontUI    = content.Load<SpriteFont>("Fonts/ButtonFont");
+        fontUi = content.Load<SpriteFont>("Fonts/ButtonFont");
 
         pixel = new Texture2D(graphicsDevice, 1, 1);
-        pixel.SetData(new[] { Color.White });
+        pixel.SetData([Color.White]);
 
         pastille = CreateCircleTexture(graphicsDevice, 64);
 
         int screenW = graphicsDevice.Viewport.Width;
         int screenH = graphicsDevice.Viewport.Height;
-        int btnW    = 200;
-        int btnH    = 50;
-        int btnY    = screenH - 80;
+        int btnW = 200;
+        int btnH = 50;
+        int btnY = screenH - 80;
         int centerX = screenW / 2;
 
-        btnReady = new Button("Prêt", new Rectangle(centerX - btnW - 20, btnY, btnW, btnH), fontUI);
+        btnReady = new Button("Prêt", new Rectangle(centerX - btnW - 20, btnY, btnW, btnH), fontUi);
         btnReady.OnClick += ClientStateController.SetReady;
-        
-        btnQuit = new Button("Quitter", new Rectangle(20, 20, 120, 40), fontUI);
+
+        btnQuit = new Button("Quitter", new Rectangle(20, 20, 120, 40), fontUi);
         btnQuit.OnClick += ClientStateController.QuitLobby;
     }
 
@@ -89,40 +78,40 @@ public class LobbyScene(ClientStateController controller) : Scene(controller)
     public override void Draw(SpriteBatch spriteBatch)
     {
         Viewport viewport = spriteBatch.GraphicsDevice.Viewport;
-        int      screenW  = viewport.Width;
+        int screenW = viewport.Width;
 
         // Titre
         Vector2 titleSize = fontTitle.MeasureString("Lobby");
-        Vector2 titlePos  = new Vector2((screenW - titleSize.X) / 2f, 30);
+        Vector2 titlePos = new Vector2((screenW - titleSize.X) / 2f, 30);
         spriteBatch.DrawString(fontTitle, "Lobby", titlePos, Color.White);
 
         // Nom de la partie
-        Vector2 nameSize = fontUI.MeasureString(gameName);
-        Vector2 namePos  = new Vector2((screenW - nameSize.X) / 2f, titlePos.Y + titleSize.Y + 6);
-        spriteBatch.DrawString(fontUI, gameName, namePos, new Color(160, 160, 160));
+        Vector2 nameSize = fontUi.MeasureString(gameName);
+        Vector2 namePos = new Vector2((screenW - nameSize.X) / 2f, titlePos.Y + titleSize.Y + 6);
+        spriteBatch.DrawString(fontUi, gameName, namePos, new Color(160, 160, 160));
 
         // Message d'erreur
-        
-        if (!string.IsNullOrEmpty(errorMessage))
+
+        if (!string.IsNullOrEmpty(ErrorMessage))
         {
-            Vector2 errSize = fontUI.MeasureString(errorMessage);
-            Vector2 errPos  = new Vector2((screenW - errSize.X) / 2f, namePos.Y + nameSize.Y + 6);
-            spriteBatch.DrawString(fontUI, errorMessage, errPos, Color.Red);
+            Vector2 errSize = fontUi.MeasureString(ErrorMessage);
+            Vector2 errPos = new Vector2((screenW - errSize.X) / 2f, namePos.Y + nameSize.Y + 6);
+            spriteBatch.DrawString(fontUi, ErrorMessage, errPos, Color.Red);
         }
         else if (ClientStateController.State.CountDownValue > 0)
         {
             string countdownText = $"Starting in {ClientStateController.State.CountDownValue}...";
-            Vector2 cdSize = fontUI.MeasureString(countdownText);
-            Vector2 cdPos  = new Vector2((screenW - cdSize.X) / 2f, namePos.Y + nameSize.Y + 6);
-            spriteBatch.DrawString(fontUI, countdownText, cdPos, Color.Yellow);
+            Vector2 cdSize = fontUi.MeasureString(countdownText);
+            Vector2 cdPos = new Vector2((screenW - cdSize.X) / 2f, namePos.Y + nameSize.Y + 6);
+            spriteBatch.DrawString(fontUi, countdownText, cdPos, Color.Yellow);
         }
-        else if (!string.IsNullOrEmpty(infoMessage))
+        else if (!string.IsNullOrEmpty(InfoMessage))
         {
-            Vector2 infoSize = fontUI.MeasureString(infoMessage);
-            Vector2 infoPos  = new Vector2((screenW - infoSize.X) / 2f, namePos.Y + nameSize.Y + 6);
-            spriteBatch.DrawString(fontUI, infoMessage, infoPos, Color.Yellow);
+            Vector2 infoSize = fontUi.MeasureString(InfoMessage);
+            Vector2 infoPos = new Vector2((screenW - infoSize.X) / 2f, namePos.Y + nameSize.Y + 6);
+            spriteBatch.DrawString(fontUi, InfoMessage, infoPos, Color.Yellow);
         }
-        
+
         DrawPlayerList(spriteBatch, viewport, (int)(namePos.Y + nameSize.Y + 40));
 
         btnReady.Draw(spriteBatch, pixel);
@@ -137,16 +126,16 @@ public class LobbyScene(ClientStateController controller) : Scene(controller)
 
     private void DrawPlayerList(SpriteBatch spriteBatch, Viewport viewport, int startY)
     {
-        int slots  = SlotPalette.Length;
+        int slots = Settings.MaxPlayers;
         int frameW = 180;
         int frameH = 220;
-        int gap    = 24;
+        int gap = 24;
         int totalW = slots * frameW + (slots - 1) * gap;
         int startX = (viewport.Width - totalW) / 2;
-        
+
         for (int slot = 0; slot < slots; slot++)
         {
-            Rectangle     frame  = new Rectangle(startX + slot * (frameW + gap), startY, frameW, frameH);
+            Rectangle frame = new Rectangle(startX + slot * (frameW + gap), startY, frameW, frameH);
 
             IReadOnlyPlayer player = null;
             foreach (var p in ClientStateController.State.Players)
@@ -167,33 +156,34 @@ public class LobbyScene(ClientStateController controller) : Scene(controller)
             }
 
             // Carré de la couleur du joueur (déterminée par l'emplacement).
-            int       square    = 110;
+            int square = 110;
             Rectangle colorRect = new Rectangle(frame.X + (frameW - square) / 2, frame.Y + 26, square, square);
-            spriteBatch.Draw(pixel, colorRect, SlotPalette[slot]);
+            var playerColor = player.Color;
+            spriteBatch.Draw(pixel, colorRect, new Color(playerColor.R, playerColor.G, playerColor.B));
 
             // Pastille prêt / pas prêt, coin haut droit du cadre.
-            int       dot     = 28;
+            int dot = 28;
             Rectangle dotRect = new Rectangle(frame.Right - dot - 12, frame.Y + 12, dot, dot);
             spriteBatch.Draw(pastille, dotRect, player.Ready ? colorReady : colorNotReady);
 
-            Vector2 nameSize = fontUI.MeasureString(player.Name);
-            Vector2 namePos  = new Vector2(frame.X + (frameW - nameSize.X) / 2f, colorRect.Bottom + 16);
-            spriteBatch.DrawString(fontUI, player.Name, namePos, Color.White);
+            Vector2 nameSize = fontUi.MeasureString(player.Name);
+            Vector2 namePos = new Vector2(frame.X + (frameW - nameSize.X) / 2f, colorRect.Bottom + 16);
+            spriteBatch.DrawString(fontUi, player.Name, namePos, Color.White);
 
             if (player.Number == 0) // Assume first player is host
             {
-                Vector2 hostSize = fontUI.MeasureString("HOST");
-                Vector2 hostPos  = new Vector2(frame.X + (frameW - hostSize.X) / 2f, namePos.Y + nameSize.Y + 6);
-                spriteBatch.DrawString(fontUI, "HOST", hostPos, colorHost);
+                Vector2 hostSize = fontUi.MeasureString("HOST");
+                Vector2 hostPos = new Vector2(frame.X + (frameW - hostSize.X) / 2f, namePos.Y + nameSize.Y + 6);
+                spriteBatch.DrawString(fontUi, "HOST", hostPos, colorHost);
             }
         }
     }
 
     private void DrawFrame(SpriteBatch spriteBatch, Rectangle frame, bool occupied)
     {
-        Color bg     = occupied ? new Color(42, 42, 56) : new Color(26, 26, 34);
+        Color bg = occupied ? new Color(42, 42, 56) : new Color(26, 26, 34);
         Color border = occupied ? new Color(95, 95, 130) : new Color(55, 55, 70);
-        int   t      = 2;
+        int t = 2;
 
         spriteBatch.Draw(pixel, frame, bg);
         spriteBatch.Draw(pixel, new Rectangle(frame.X, frame.Y, frame.Width, t), border);
@@ -204,17 +194,17 @@ public class LobbyScene(ClientStateController controller) : Scene(controller)
 
     private void DrawCenteredText(SpriteBatch spriteBatch, string text, Rectangle frame, Color color)
     {
-        Vector2 size = fontUI.MeasureString(text);
-        Vector2 pos  = new Vector2(frame.X + (frame.Width - size.X) / 2f, frame.Y + (frame.Height - size.Y) / 2f);
-        spriteBatch.DrawString(fontUI, text, pos, color);
+        Vector2 size = fontUi.MeasureString(text);
+        Vector2 pos = new Vector2(frame.X + (frame.Width - size.X) / 2f, frame.Y + (frame.Height - size.Y) / 2f);
+        spriteBatch.DrawString(fontUi, text, pos, color);
     }
 
     private static Texture2D CreateCircleTexture(GraphicsDevice device, int diameter)
     {
-        Texture2D texture  = new Texture2D(device, diameter, diameter);
-        Color[]   data     = new Color[diameter * diameter];
-        float     radius   = diameter / 2f;
-        float     radiusSq = radius * radius;
+        Texture2D texture = new Texture2D(device, diameter, diameter);
+        Color[] data = new Color[diameter * diameter];
+        float radius = diameter / 2f;
+        float radiusSq = radius * radius;
 
         for (int y = 0; y < diameter; y++)
         for (int x = 0; x < diameter; x++)

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using BomberPerson.Core.Client;
 using BomberPerson.Core.Server;
 using BomberPerson.Core.State;
@@ -21,22 +20,21 @@ public class GameScene(ClientStateController clientStateController) : Scene(clie
     private Button quitButton;
 
     private const int HeaderHeight = 50;
-    private const int TileSize = 32;
 
     private static readonly (Keys[] Bindings, MoveMessage.MoveDirection Direction)[] MoveBindings =
-    {
-        (new[] { Keys.Up,    Keys.W }, MoveMessage.MoveDirection.Up),
-        (new[] { Keys.Down,  Keys.S }, MoveMessage.MoveDirection.Down),
-        (new[] { Keys.Left,  Keys.A }, MoveMessage.MoveDirection.Left),
-        (new[] { Keys.Right, Keys.D }, MoveMessage.MoveDirection.Right),
-    };
+    [
+        ([Keys.Up,    Keys.W], MoveMessage.MoveDirection.Up),
+        ([Keys.Down,  Keys.S], MoveMessage.MoveDirection.Down),
+        ([Keys.Left,  Keys.A], MoveMessage.MoveDirection.Left),
+        ([Keys.Right, Keys.D], MoveMessage.MoveDirection.Right)
+    ];
 
     public override void LoadContent(ContentManager content, GraphicsDevice graphicsDevice)
     {
         pixel = new Texture2D(graphicsDevice, 1, 1);
         pixel.SetData([Color.White]);
 
-        circle = CreateCircleTexture(graphicsDevice, TileSize);
+        circle = CreateCircleTexture(graphicsDevice, Settings.TileSize);
         font = content.Load<SpriteFont>("Fonts/ButtonFont");
 
         quitButton = new Button("Quit", new Rectangle(10, 10, 80, 30), font);
@@ -152,7 +150,7 @@ public class GameScene(ClientStateController clientStateController) : Scene(clie
                         _ => Color.Gray
                     };
 
-                    spriteBatch.Draw(pixel, new Rectangle((int)x * TileSize, (int)y * TileSize + HeaderHeight, TileSize, TileSize), color);
+                    spriteBatch.Draw(pixel, new Rectangle((int)x * Settings.TileSize, (int)y * Settings.TileSize + HeaderHeight, Settings.TileSize, Settings.TileSize), color);
                 }
             }
         }
@@ -160,13 +158,13 @@ public class GameScene(ClientStateController clientStateController) : Scene(clie
         // Draw Bombs
         foreach (var bomb in state.Bombs)
         {
-            spriteBatch.Draw(circle, new Rectangle((int)bomb.PositionX * TileSize, (int)bomb.PositionY * TileSize + HeaderHeight, TileSize, TileSize), Color.Red);
+            spriteBatch.Draw(circle, new Rectangle((int)bomb.PositionX * Settings.TileSize, (int)bomb.PositionY * Settings.TileSize + HeaderHeight, Settings.TileSize, Settings.TileSize), Color.Red);
         }
 
         // Draw Explosions
         foreach (var explosion in state.Explosions)
         {
-            spriteBatch.Draw(pixel, new Rectangle((int)explosion.PositionX * TileSize, (int)explosion.PositionY * TileSize + HeaderHeight, TileSize, TileSize), Color.Orange);
+            spriteBatch.Draw(pixel, new Rectangle((int)explosion.PositionX * Settings.TileSize, (int)explosion.PositionY * Settings.TileSize + HeaderHeight, Settings.TileSize, Settings.TileSize), Color.Orange);
         }
 
         // Draw Players
@@ -176,11 +174,11 @@ public class GameScene(ClientStateController clientStateController) : Scene(clie
                 continue;
             // player.Position is Vector2, probably in world coordinates
             Color pColor = new Color(player.Color.R, player.Color.G, player.Color.B);
-            spriteBatch.Draw(circle, new Rectangle((int)player.Position.X, (int)player.Position.Y + HeaderHeight, (int)Simulation.PlayerRadius*2,(int)Simulation.PlayerRadius*2), pColor);
+            spriteBatch.Draw(circle, new Rectangle((int)player.Position.X, (int)player.Position.Y + HeaderHeight, Settings.PlayerRadius*2,Settings.PlayerRadius*2), pColor);
             
             // Draw name
             Vector2 nameSize = font.MeasureString(player.Name);
-            spriteBatch.DrawString(font, player.Name, new Vector2(player.Position.X + (TileSize - nameSize.X) / 2, player.Position.Y + HeaderHeight - 20), Color.White);
+            spriteBatch.DrawString(font, player.Name, new Vector2(player.Position.X + (Settings.TileSize - nameSize.X) / 2, player.Position.Y + HeaderHeight - 20), Color.White);
         }
     }
 }

@@ -1,5 +1,4 @@
 using System;
-using BomberPerson.Core.State;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
@@ -49,7 +48,7 @@ public class Server(int port, long address)
                     continue;
                 }
 
-                Task.Run(new ClientHandler(client, slot, messageBuffer, broadcastBlock,
+                _ = Task.Run(new ClientHandler(client, slot, messageBuffer, broadcastBlock,
                     () => freeSlots.Enqueue(slot), cts.Token).Handle);
             }
         }

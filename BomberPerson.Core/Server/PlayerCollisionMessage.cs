@@ -1,6 +1,5 @@
 using System;
 using System.Numerics;
-using BomberPerson.Core.Messages;
 
 namespace BomberPerson.Core.Server;
 

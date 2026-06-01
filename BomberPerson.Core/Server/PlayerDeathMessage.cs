@@ -1,15 +1,13 @@
 using System;
 using System.Linq;
-using BomberPerson.Core.Messages;
 
 namespace BomberPerson.Core.Server;
 
 public class PlayerDeathMessage(int playerSlot, DateTimeOffset realisationDate) : FeedBackMessage
 {
     public int PlayerSlot { get; } = playerSlot;
-    private readonly DateTimeOffset _realisationDate = realisationDate;
 
-    protected override DateTimeOffset GetRealisationDate() => _realisationDate;
+    protected override DateTimeOffset GetRealisationDate() => realisationDate;
 
     public override void Process(State.State state)
     {

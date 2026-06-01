@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using BomberPerson.Core.Messages;
 using BomberPerson.Core.State;
 using BomberPerson.Core.State.NetworkMessages;
@@ -17,19 +16,8 @@ namespace BomberPerson.Core.Server;
 /// </summary>
 public class Simulation(State.State state)
 {
-    private static readonly Color[] Palette =
-    {
-        Color.FromArgb(30,  60,  150),
-        Color.FromArgb(200, 50,  50),
-        Color.FromArgb(60,  180, 70),
-        Color.FromArgb(220, 200, 40),
-    };
-
     private static readonly TimeSpan GameDuration = TimeSpan.FromMinutes(2);
     private static readonly TimeSpan CollisionSimulationStep = TimeSpan.FromMilliseconds(50);
-    public const uint CellSize = 32;
-    public const uint PlayerRadius = 10;
-    public const uint BombRadius = PlayerRadius;
     public IMessage[] ProcessMessage(IMessage message)
     {
         if (message is not ISimulationMessage simulationMessage)
@@ -162,9 +150,9 @@ public class Simulation(State.State state)
 
     private static bool IsColliding(Vector2 position, IReadOnlyState state)
     {
-        Vector2 playerCenter = position + new Vector2(PlayerRadius, PlayerRadius);
-        uint centerCellX = (uint)playerCenter.X / CellSize;
-        uint centerCellY = (uint)playerCenter.Y / CellSize;
+        Vector2 playerCenter = position + new Vector2(Settings.PlayerRadius, Settings.PlayerRadius);
+        uint centerCellX = (uint)playerCenter.X / Settings.TileSize;
+        uint centerCellY = (uint)playerCenter.Y / Settings.TileSize;
         
         // check cells around the position
         for (uint i = centerCellX - 1; i <= centerCellX + 1; i++)
@@ -176,12 +164,12 @@ public class Simulation(State.State state)
                 if (state.Terrain[i,j] is Terrain.Type.Border or Terrain.Type.Solid or Terrain.Type.Box)
                 {
                     Rectangle cell = new Rectangle(
-                        (int)(i * CellSize),
-                        (int)(j * CellSize),
-                        (int)CellSize,
-                        (int)CellSize);
+                        (int)(i * Settings.TileSize),
+                        (int)(j * Settings.TileSize),
+                        Settings.TileSize,
+                        Settings.TileSize);
                     
-                    if(Intersects(cell,playerCenter,PlayerRadius))
+                    if(Intersects(cell,playerCenter,Settings.PlayerRadius))
                         return true;
                 }
             }
@@ -189,10 +177,10 @@ public class Simulation(State.State state)
         
         
         // check for all bombs
-        var squaredSummedRadius = (PlayerRadius + BombRadius) * (PlayerRadius + BombRadius);
+        var squaredSummedRadius = (Settings.PlayerRadius + Settings.BombRadius) * (Settings.PlayerRadius + Settings.BombRadius);
         foreach (var bomb in state.Bombs)
         {
-            Vector2 bombCenter = new Vector2(bomb.PositionX * CellSize + BombRadius, bomb.PositionY * CellSize + BombRadius);
+            Vector2 bombCenter = new Vector2(bomb.PositionX * Settings.TileSize + Settings.BombRadius, bomb.PositionY * Settings.TileSize + Settings.BombRadius);
 
             if ((bombCenter - playerCenter).LengthSquared() <= squaredSummedRadius)
                 return true;
@@ -203,15 +191,15 @@ public class Simulation(State.State state)
 
     private static bool IsOverExplosion(Vector2 position, IReadOnlyState state)
     {
-        Vector2 playerCenter = position + new Vector2(PlayerRadius, PlayerRadius);
+        Vector2 playerCenter = position + new Vector2(Settings.PlayerRadius, Settings.PlayerRadius);
         foreach (var explosion in state.Explosions)
         {
             Rectangle rect = new Rectangle(
-                (int)(explosion.PositionX * CellSize),
-                (int)(explosion.PositionY * CellSize),
-                (int)CellSize,(int)CellSize);
+                (int)(explosion.PositionX * Settings.TileSize),
+                (int)(explosion.PositionY * Settings.TileSize),
+                Settings.TileSize,Settings.TileSize);
             
-            if(Intersects(rect,playerCenter,PlayerRadius))
+            if(Intersects(rect,playerCenter,Settings.PlayerRadius))
                 return true;
         }
 

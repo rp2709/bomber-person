@@ -10,7 +10,7 @@ namespace BomberPerson.Core.Scene;
 public class EndGameScene(ClientStateController clientStateController) : Scene(clientStateController)
 {
     private SpriteFont fontTitle;
-    private SpriteFont fontUI;
+    private SpriteFont fontUi;
     private Texture2D pixel;
 
     private Button btnReplay;
@@ -22,7 +22,7 @@ public class EndGameScene(ClientStateController clientStateController) : Scene(c
     public override void LoadContent(ContentManager content, GraphicsDevice graphicsDevice)
     {
         fontTitle = content.Load<SpriteFont>("Fonts/TitleFont");
-        fontUI = content.Load<SpriteFont>("Fonts/ButtonFont");
+        fontUi = content.Load<SpriteFont>("Fonts/ButtonFont");
 
         pixel = new Texture2D(graphicsDevice, 1, 1);
         pixel.SetData([Color.White]);
@@ -55,8 +55,8 @@ public class EndGameScene(ClientStateController clientStateController) : Scene(c
         int btnX = (screenW - btnW) / 2;
         int btnY = screenH / 2 + 60;
 
-        btnReplay = new Button("Replay", new Rectangle(btnX, btnY, btnW, btnH), fontUI);
-        btnQuit = new Button("Quitter", new Rectangle(btnX, btnY + btnH + spacing, btnW, btnH), fontUI);
+        btnReplay = new Button("Replay", new Rectangle(btnX, btnY, btnW, btnH), fontUi);
+        btnQuit = new Button("Quitter", new Rectangle(btnX, btnY + btnH + spacing, btnW, btnH), fontUi);
 
         btnReplay.OnClick += ClientStateController.Replay;
         btnQuit.OnClick += ClientStateController.QuitLobby;

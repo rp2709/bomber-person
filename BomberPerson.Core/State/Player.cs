@@ -20,14 +20,13 @@ public interface IReadOnlyPlayer
 
 public class Player(int number, string name, Color color) : IReadOnlyPlayer
 {
-    public const uint BombPlaceDelayS = 3;
     public int Number { get; private set; } = number;
     public string Name { get; private set; } = name;
     public Color Color { get; private set; } = color;
 
     public Vector2 Position { get; set; }= Vector2.Zero;
     public Vector2 Velocity { get; set; }= Vector2.Zero;
-    public bool Ready { get; private set; } = false;
+    public bool Ready { get; private set; }
     public bool IsAlive { get; set; } = true;
     public DateTimeOffset LastBombPlaced { get; set; }
     public void FlipReady(){Ready = !Ready;}
@@ -55,9 +54,9 @@ public class Player(int number, string name, Color color) : IReadOnlyPlayer
             Position = new Vector2(reader.ReadSingle(), reader.ReadSingle()),
             Velocity = new Vector2(reader.ReadSingle(), reader.ReadSingle()),
             Ready = reader.ReadBoolean(),
-            IsAlive = reader.ReadBoolean()
+            IsAlive = reader.ReadBoolean(),
+            LastBombPlaced = DateTimeOffset.FromUnixTimeSeconds(reader.ReadInt64())
         };
-        player.LastBombPlaced =  DateTimeOffset.FromUnixTimeSeconds(reader.ReadInt64());
         return player;
     }
 

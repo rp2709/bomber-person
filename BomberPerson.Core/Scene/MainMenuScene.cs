@@ -1,5 +1,4 @@
-﻿using System;
-using BomberPerson.Core.Client;
+﻿using BomberPerson.Core.Client;
 using BomberPerson.Core.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
@@ -17,11 +16,11 @@ namespace BomberPerson.Core.Scene;
 
     private const string Title = "Bomberman";
 
-    private string errorMessage => ClientStateController.StatusMessage?.Importance == StatusMessage.ImportanceLevels.Error 
+    private string ErrorMessage => ClientStateController.StatusMessage?.Importance == StatusMessage.ImportanceLevels.Error 
         ? ClientStateController.StatusMessage.Message 
         : null;
 
-    private string infoMessage => ClientStateController.StatusMessage?.Importance != StatusMessage.ImportanceLevels.Error 
+    private string InfoMessage => ClientStateController.StatusMessage?.Importance != StatusMessage.ImportanceLevels.Error 
         ? ClientStateController.StatusMessage?.Message 
         : null;
     
@@ -77,17 +76,17 @@ namespace BomberPerson.Core.Scene;
         btnHost.Draw(spriteBatch, pixel);
         btnJoin.Draw(spriteBatch, pixel);
 
-        if (!string.IsNullOrEmpty(errorMessage))
+        if (!string.IsNullOrEmpty(ErrorMessage))
         {
-            Vector2 errSize = fontButton.MeasureString(errorMessage);
+            Vector2 errSize = fontButton.MeasureString(ErrorMessage);
             Vector2 errPos  = new Vector2((viewport.Width - errSize.X) / 2f, titlePos.Y + titleSize.Y + 10);
-            spriteBatch.DrawString(fontButton, errorMessage, errPos, Color.Red);
+            spriteBatch.DrawString(fontButton, ErrorMessage, errPos, Color.Red);
         }
-        else if (!string.IsNullOrEmpty(infoMessage))
+        else if (!string.IsNullOrEmpty(InfoMessage))
         {
-            Vector2 infoSize = fontButton.MeasureString(infoMessage);
+            Vector2 infoSize = fontButton.MeasureString(InfoMessage);
             Vector2 infoPos  = new Vector2((viewport.Width - infoSize.X) / 2f, titlePos.Y + titleSize.Y + 10);
-            spriteBatch.DrawString(fontButton, infoMessage, infoPos, Color.Yellow);
+            spriteBatch.DrawString(fontButton, InfoMessage, infoPos, Color.Yellow);
         }
     }
 
